@@ -27,24 +27,64 @@ spec:
                 - -c
                 - |
                   set -e
+                  apk add --no-cache rclone > /dev/null 2>&1
+
                   TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
-                  BACKUP_DIR=/backups
+                  BACKUP_FILE="/tmp/all-databases-${TIMESTAMP}.sql.gz"
 
                   echo "Starting backup at ${TIMESTAMP}"
                   pg_dumpall -h postgres.databases.svc.cluster.local -U postgres \
-                    > "${BACKUP_DIR}/all-databases-${TIMESTAMP}.sql"
+                    | gzip > "${BACKUP_FILE}"
 
-                  # Keep only last 7 days of backups
-                  find "${BACKUP_DIR}" -name "*.sql" -mtime +7 -delete
+                  echo "Uploading to R2..."
+                  rclone copy "${BACKUP_FILE}" r2:${R2_BUCKET}/backups/hetzner-k3s/postgres/ \
+                    --s3-provider=Cloudflare \
+                    --s3-access-key-id="${R2_ACCESS_KEY}" \
+                    --s3-secret-access-key="${R2_SECRET_KEY}" \
+                    --s3-endpoint="${R2_ENDPOINT}" \
+                    --s3-no-check-bucket
 
-                  echo "Backup complete: all-databases-${TIMESTAMP}.sql"
-                  ls -lh "${BACKUP_DIR}/"
+                  echo "Cleaning up remote backups older than 30 days..."
+                  rclone delete r2:${R2_BUCKET}/backups/hetzner-k3s/postgres/ \
+                    --s3-provider=Cloudflare \
+                    --s3-access-key-id="${R2_ACCESS_KEY}" \
+                    --s3-secret-access-key="${R2_SECRET_KEY}" \
+                    --s3-endpoint="${R2_ENDPOINT}" \
+                    --s3-no-check-bucket \
+                    --min-age 30d
+
+                  # Also keep a local copy (last 7 days)
+                  cp "${BACKUP_FILE}" /backups/
+                  find /backups -name "*.sql.gz" -mtime +7 -delete
+
+                  echo "Backup complete: ${BACKUP_FILE}"
+                  ls -lh /backups/
               env:
                 - name: PGPASSWORD
                   valueFrom:
                     secretKeyRef:
                       name: postgres-credentials
                       key: superuser-password
+                - name: R2_ACCESS_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: r2-credentials
+                      key: access-key
+                - name: R2_SECRET_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: r2-credentials
+                      key: secret-key
+                - name: R2_ENDPOINT
+                  valueFrom:
+                    secretKeyRef:
+                      name: r2-credentials
+                      key: endpoint
+                - name: R2_BUCKET
+                  valueFrom:
+                    secretKeyRef:
+                      name: r2-credentials
+                      key: bucket
               volumeMounts:
                 - name: backups
                   mountPath: /backups
@@ -53,8 +93,8 @@ spec:
                   cpu: 25m
                   memory: 64Mi
                 limits:
-                  cpu: 100m
-                  memory: 128Mi
+                  cpu: 200m
+                  memory: 256Mi
           volumes:
             - name: backups
               persistentVolumeClaim:
