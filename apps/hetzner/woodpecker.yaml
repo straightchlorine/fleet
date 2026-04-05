@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
     path: clusters/hetzner/woodpecker
-    targetRevision: main
+    targetRevision: master
   destination:
     server: https://kubernetes.default.svc
     namespace: woodpecker
