@@ -21,6 +21,36 @@ patches:
         path: /spec/replicas
         value: 2
 
+  # Bump server resources
+  - target:
+      kind: Deployment
+      name: woodpecker-server
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+
+  # Bump agent resources
+  - target:
+      kind: Deployment
+      name: woodpecker-agent
+    patch: |
+      - op: replace
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests:
+            cpu: 150m
+            memory: 384Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+
   # Use local-path storage on k3s
   - target:
       kind: PersistentVolumeClaim
