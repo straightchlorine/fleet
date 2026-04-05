@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: woodpecker-agent
+  namespace: woodpecker
+  labels:
+    app: woodpecker-agent
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+    - name: agent
+      port: 3000
+      targetPort: 3000
+  selector:
+    app: woodpecker-agent

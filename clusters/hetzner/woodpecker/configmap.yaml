@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: woodpecker-server-config
+  namespace: woodpecker
+data:
+  woodpecker-host: "https://ci.codextechnologies.org"
+  gitea-enabled: "true"
+  gitea-url: "https://codeberg.org"
+  admin-user: "piotrkrzysztof"
+  cookie-secure: "true"
+  cookie-httponly: "true"
+  cookie-samesite: "Lax"
+  log-level: "info"

@@ -1,0 +1,18 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: hetzner-apps
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
+    path: apps/hetzner
+    targetRevision: main
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true

@@ -1,0 +1,74 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: woodpecker-server-netpol
+  namespace: woodpecker
+  labels:
+    app: woodpecker-server
+spec:
+  podSelector:
+    matchLabels:
+      app: woodpecker-server
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow from Traefik ingress controller
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 8000
+    # Allow gRPC from agents in same namespace
+    - from:
+        - podSelector:
+            matchLabels:
+              app: woodpecker-agent
+      ports:
+        - protocol: TCP
+          port: 9000
+  egress:
+    # Allow to shared postgres in databases namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: databases
+          podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    # Allow to agents
+    - to:
+        - podSelector:
+            matchLabels:
+              app: woodpecker-agent
+      ports:
+        - protocol: TCP
+          port: 3000
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # External HTTPS/HTTP (Codeberg OAuth, webhooks)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80

@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/woodpecker-server
+  - ../../../base/woodpecker-agent
+  - namespace.yaml
+  - configmap.yaml
+
+patches:
+  # Bump agent replicas to 2
+  - target:
+      kind: Deployment
+      name: woodpecker-agent
+    patch: |
+      - op: replace
+        path: /spec/replicas
+        value: 2
+
+  # Use local-path storage on k3s
+  - target:
+      kind: PersistentVolumeClaim
+      name: woodpecker-data
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: local-path

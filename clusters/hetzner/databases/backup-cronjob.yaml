@@ -1,0 +1,76 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: databases
+  labels:
+    app: postgres-backup
+spec:
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 600
+      template:
+        spec:
+          restartPolicy: OnFailure
+          securityContext:
+            runAsUser: 999
+            runAsGroup: 999
+          containers:
+            - name: backup
+              image: postgres:17.4-alpine
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
+                  TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
+                  BACKUP_DIR=/backups
+
+                  echo "Starting backup at ${TIMESTAMP}"
+                  pg_dumpall -h postgres.databases.svc.cluster.local -U postgres \
+                    > "${BACKUP_DIR}/all-databases-${TIMESTAMP}.sql"
+
+                  # Keep only last 7 days of backups
+                  find "${BACKUP_DIR}" -name "*.sql" -mtime +7 -delete
+
+                  echo "Backup complete: all-databases-${TIMESTAMP}.sql"
+                  ls -lh "${BACKUP_DIR}/"
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-credentials
+                      key: superuser-password
+              volumeMounts:
+                - name: backups
+                  mountPath: /backups
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 100m
+                  memory: 128Mi
+          volumes:
+            - name: backups
+              persistentVolumeClaim:
+                claimName: postgres-backups
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backups
+  namespace: databases
+  labels:
+    app: postgres-backup
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: local-path
+  resources:
+    requests:
+      storage: 1Gi

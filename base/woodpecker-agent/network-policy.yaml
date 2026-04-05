@@ -1,0 +1,63 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: woodpecker-agent-netpol
+  namespace: woodpecker
+  labels:
+    app: woodpecker-agent
+spec:
+  podSelector:
+    matchLabels:
+      app: woodpecker-agent
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: woodpecker-server
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress:
+    # gRPC to server
+    - to:
+        - podSelector:
+            matchLabels:
+              app: woodpecker-server
+      ports:
+        - protocol: TCP
+          port: 9000
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # External HTTPS/HTTP (cloning repos, pulling images)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
+        - protocol: TCP
+          port: 6443
+    # Kubernetes API (for pod/volume management)
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: default
+      ports:
+        - protocol: TCP
+          port: 443

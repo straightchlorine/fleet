@@ -1,0 +1,144 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: woodpecker-server
+  namespace: woodpecker
+  labels:
+    app: woodpecker-server
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: woodpecker-server
+  template:
+    metadata:
+      labels:
+        app: woodpecker-server
+    spec:
+      serviceAccountName: woodpecker-server
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: server
+          image: woodpeckerci/woodpecker-server:v3.13.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+            - name: grpc
+              containerPort: 9000
+              protocol: TCP
+          env:
+            - name: WOODPECKER_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: woodpecker-host
+            - name: WOODPECKER_GITEA
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: gitea-enabled
+            - name: WOODPECKER_GITEA_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: gitea-url
+            - name: WOODPECKER_ADMIN
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: admin-user
+            - name: WOODPECKER_AGENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: woodpecker-agent-secret
+                  key: agent-secret
+            - name: WOODPECKER_COOKIE_SECURE
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: cookie-secure
+            - name: WOODPECKER_COOKIE_HTTPONLY
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: cookie-httponly
+            - name: WOODPECKER_COOKIE_SAMESITE
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: cookie-samesite
+            - name: WOODPECKER_LOG_LEVEL
+              valueFrom:
+                configMapKeyRef:
+                  name: woodpecker-server-config
+                  key: log-level
+            - name: WOODPECKER_PLUGINS_PRIVILEGED
+              value: "woodpeckerci/plugin-docker-buildx:latest"
+            - name: WOODPECKER_DATABASE_DRIVER
+              value: "postgres"
+            - name: WOODPECKER_DATABASE_DATASOURCE
+              valueFrom:
+                secretKeyRef:
+                  name: woodpecker-db-datasource
+                  key: datasource
+            - name: WOODPECKER_DATABASE_MAX_OPEN_CONNS
+              value: "32"
+            - name: WOODPECKER_DATABASE_MAX_IDLE_CONNS
+              value: "8"
+            - name: WOODPECKER_GITEA_CLIENT
+              valueFrom:
+                secretKeyRef:
+                  name: woodpecker-oauth
+                  key: gitea-client
+            - name: WOODPECKER_GITEA_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: woodpecker-oauth
+                  key: gitea-secret
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/woodpecker
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+              scheme: HTTP
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 300m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: woodpecker-data
