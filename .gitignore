@@ -4,5 +4,6 @@
 .env
 .env.*
 *-secret.yaml
+!sealed-*-secret.yaml
 secret.yaml
 secrets/
