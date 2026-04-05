@@ -14,6 +14,9 @@ spec:
     spec:
       activeDeadlineSeconds: 600
       template:
+        metadata:
+          labels:
+            app: postgres-backup
         spec:
           restartPolicy: OnFailure
           securityContext:
@@ -27,7 +30,7 @@ spec:
                 - /bin/sh
                 - -c
                 - |
-                  set -e
+                  set -eo pipefail
                   wget -qO /tmp/age.tar.gz https://github.com/FiloSottile/age/releases/download/v1.2.1/age-v1.2.1-linux-amd64.tar.gz
                   tar -xzf /tmp/age.tar.gz -C /tmp
                   export PATH="/tmp/age:$PATH"
