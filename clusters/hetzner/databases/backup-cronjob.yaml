@@ -19,25 +19,62 @@ spec:
           securityContext:
             runAsUser: 999
             runAsGroup: 999
-          containers:
-            - name: backup
+          initContainers:
+            # Step 1: dump postgres
+            - name: dump
               image: postgres:17.4-alpine
               command:
                 - /bin/sh
                 - -c
                 - |
                   set -e
-                  apk add --no-cache rclone > /dev/null 2>&1
+                  wget -qO /tmp/age.tar.gz https://github.com/FiloSottile/age/releases/download/v1.2.1/age-v1.2.1-linux-amd64.tar.gz
+                  tar -xzf /tmp/age.tar.gz -C /tmp
+                  export PATH="/tmp/age:$PATH"
 
                   TIMESTAMP=$(date +%Y-%m-%d_%H%M%S)
-                  BACKUP_FILE="/tmp/all-databases-${TIMESTAMP}.sql.gz"
+                  BACKUP_FILE="/scratch/all-databases-${TIMESTAMP}.sql.gz.age"
 
                   echo "Starting backup at ${TIMESTAMP}"
                   pg_dumpall -h postgres.databases.svc.cluster.local -U postgres \
-                    | gzip > "${BACKUP_FILE}"
+                    | gzip \
+                    | age -r "${AGE_PUBLIC_KEY}" \
+                    > "${BACKUP_FILE}"
 
+                  echo "Dump complete (encrypted)"
+                  ls -lh /scratch/
+              env:
+                - name: PGPASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: postgres-credentials
+                      key: superuser-password
+                - name: AGE_PUBLIC_KEY
+                  valueFrom:
+                    secretKeyRef:
+                      name: backup-encryption
+                      key: age-public-key
+              volumeMounts:
+                - name: scratch
+                  mountPath: /scratch
+              resources:
+                requests:
+                  cpu: 25m
+                  memory: 64Mi
+                limits:
+                  cpu: 200m
+                  memory: 256Mi
+          containers:
+            # Step 2: upload to R2 + keep local copy
+            - name: upload
+              image: rclone/rclone:1.69
+              command:
+                - /bin/sh
+                - -c
+                - |
+                  set -e
                   echo "Uploading to R2..."
-                  rclone copy "${BACKUP_FILE}" r2:${R2_BUCKET}/backups/hetzner-k3s/postgres/ \
+                  rclone copy /scratch/ :s3:${R2_BUCKET}/backups/hetzner-k3s/postgres/ \
                     --s3-provider=Cloudflare \
                     --s3-access-key-id="${R2_ACCESS_KEY}" \
                     --s3-secret-access-key="${R2_SECRET_KEY}" \
@@ -45,7 +82,7 @@ spec:
                     --s3-no-check-bucket
 
                   echo "Cleaning up remote backups older than 30 days..."
-                  rclone delete r2:${R2_BUCKET}/backups/hetzner-k3s/postgres/ \
+                  rclone delete :s3:${R2_BUCKET}/backups/hetzner-k3s/postgres/ \
                     --s3-provider=Cloudflare \
                     --s3-access-key-id="${R2_ACCESS_KEY}" \
                     --s3-secret-access-key="${R2_SECRET_KEY}" \
@@ -53,18 +90,13 @@ spec:
                     --s3-no-check-bucket \
                     --min-age 30d
 
-                  # Also keep a local copy (last 7 days)
-                  cp "${BACKUP_FILE}" /backups/
-                  find /backups -name "*.sql.gz" -mtime +7 -delete
+                  # Keep local copy (last 7 days)
+                  cp /scratch/*.sql.gz.age /backups/
+                  find /backups -name "*.sql.gz.age" -mtime +7 -delete
 
-                  echo "Backup complete: ${BACKUP_FILE}"
+                  echo "Backup complete"
                   ls -lh /backups/
               env:
-                - name: PGPASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: postgres-credentials
-                      key: superuser-password
                 - name: R2_ACCESS_KEY
                   valueFrom:
                     secretKeyRef:
@@ -86,6 +118,9 @@ spec:
                       name: r2-credentials
                       key: bucket
               volumeMounts:
+                - name: scratch
+                  mountPath: /scratch
+                  readOnly: true
                 - name: backups
                   mountPath: /backups
               resources:
@@ -96,6 +131,8 @@ spec:
                   cpu: 200m
                   memory: 256Mi
           volumes:
+            - name: scratch
+              emptyDir: {}
             - name: backups
               persistentVolumeClaim:
                 claimName: postgres-backups

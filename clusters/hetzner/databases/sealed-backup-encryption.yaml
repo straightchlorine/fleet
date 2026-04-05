@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: backup-encryption
+  namespace: databases
+spec:
+  encryptedData:
+    age-public-key: AgAXLkWTYf26yio4H0/FS6mICQe5LSH0Ocboo7v6BWsu2rg4MuiRtG+yYmWZudSKsYqswaTUHm1tb0rZdXID86m8Iv0GLZu6PTJl6mtDhIHocKeo50BOO62iKNke0tkQjwpDG5oQVsOPjF1InegxpYcbMAf86OdSvmV2nW0GXCPcugkFWc8ro+8s2Jwk1Ui0GP5sQzmgAdUvQdv6of2z/P+0dVZp8NprHYg2b/AuaITUbsnBUEz8wHrCCpVsZxmJmL9jn6HK168a/DPLQ9MNMXvOlEE6t8U5RA4EbZK4Q9+lSYauB/bnfAT6C9Xiop+GwG3kj2NAQ1ZgrYR+NNyU4H+URkLqslMaY4bTlVDnpvIAuS8jO9olG3VjaHUKkpghAA1RXLbwFmDJ955l/M6u29D0kBBnfUmta8Ryh5y5hhMi3mFYStIj0JSe1XeQKGKa2MDFqw5lE1zgZGqdp4R4/FJJWEXg4SBpZq761CTmNWOD73/SJBeDmLgcIw9ll9IopxXMySsxcGrlMA6ldVqzzev4eJmPASLRT0VeyIKA22MlwHHqK6qPTfpHJqmHLOnzrgCb/J6OD0pBgE9sxkGeJdCv+cvtTpGEWdx3B+9JiO3bMPTxpgAqRdiB1oIttejj5J5EwkrcHGVEv3vEeldiDYkMZG3DHpl/M5Z+TyBjceLq41GuF8JYXzvuAbsSarALCa8YZ2ZaNBWqI7U7BM3BINNhBVH8k+MnRX/xTRrqNq5p/Qchm2MEMRlZh5VTVuRgAlW8BlhVo+mdsQprWZzghQ==
+  template:
+    metadata:
+      name: backup-encryption
+      namespace: databases
+    type: Opaque
