@@ -6,6 +6,7 @@ resources:
   - ../../../base/woodpecker-agent
   - namespace.yaml
   - configmap.yaml
+  - ingress.yaml
 
 patches:
   # Bump agent replicas to 2
