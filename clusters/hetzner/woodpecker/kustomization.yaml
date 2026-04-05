@@ -7,6 +7,9 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - ingress.yaml
+  - sealed-woodpecker-agent-secret.yaml
+  - sealed-woodpecker-db-datasource.yaml
+  - sealed-woodpecker-oauth.yaml
 
 patches:
   # Bump agent replicas to 2

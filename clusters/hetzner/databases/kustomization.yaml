@@ -4,6 +4,8 @@ kind: Kustomization
 resources:
   - ../../../base/postgres
   - backup-cronjob.yaml
+  - sealed-postgres-credentials.yaml
+  - sealed-woodpecker-db-init.yaml
 
 configMapGenerator:
   - name: postgres-init

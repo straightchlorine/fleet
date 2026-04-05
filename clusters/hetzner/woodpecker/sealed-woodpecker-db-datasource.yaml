@@ -1,0 +1,14 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: woodpecker-db-datasource
+  namespace: woodpecker
+spec:
+  encryptedData:
+    datasource: AgB2zeHnbO4SOrBTSshaeInXbJWsD4clQSu1G72aEfrAltfSN2c6bIXxAdKKwDeWK1hwMcrgefbxT4hHl/0W/s2fLhA3UQ5jQYBmhDNbB/Ba5EPYbSMVODAsDq92QhC2KWGZE2UpEt/TxCrmOWL9s7WXOOVHiDtcQnpzLvFkK8RfbkqtFcJ0cGct2NlANBDHyZI7dTeUWo/IiX6givv60KLPchngJ9sumILAKqad4s7CdAVBzzdZ/ULSlH1E0zPv9qJafdWZKf6JWd9Tl0mjUVI9LgZ77krEr+ayF49mWnRwJvWHm3dBRw8WzamUuh4k7kobc+5dG2NyNnwih30EJXqk38+a8jbaelAV49mWHiR1BYPdNeq1IEPVt7BBq+r0zj7mMYywitketUcYMX17nhjhzu+p5jseqD8ydkkVGjMLpLFHpdKIh1aZvVFEafCopwL96jSYS78kXezjd3OAo1rYg7lo/Aulz+AIziddWPqPuHynezelVfFSmH6/C7JNGzU7CimL7P+7aZg5cSv44eGPAf+Cm100OwCKW8pjwWIdBx7ccGBdizo5iKYe0LLCLj4EiqdfPKsU3ZDVtZ6MRLDuQ3qqE2o7b/JwaKlELQkh1QaiiE3iNYoypgDTA4o4eFPm5M/mvhuBruebZaIA/w9ffq5hzSIlT7UQtvnos+gUl3E41cYR7tzYfAoFtsMTZ98QNrWjob0hmuq+QSFMorEY8m7XhK1lHaSHF8lNiar7MYAMScgW8XxnY9KkYA1jzyqvEi0ekcXM2/EbBEenmSbwMhfHd69ytZDy+SNu54SoMMR9dQ8kY8d20ME/jKQE2Y9mG6BTC90+XreymHmef0i9pT1L39joPxcWo2Bqgnr1mbw1kmYTQ+zy0VVfG48HE6OzZBKz/w9jB8AgDQ==
+  template:
+    metadata:
+      name: woodpecker-db-datasource
+      namespace: woodpecker
+    type: Opaque
