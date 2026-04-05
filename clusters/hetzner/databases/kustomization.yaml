@@ -14,16 +14,16 @@ configMapGenerator:
 patches:
   # Use local-path storage class on k3s
   - target:
-      kind: PersistentVolumeClaim
-      name: postgres-data
+      kind: StatefulSet
+      name: postgres
     patch: |
       - op: add
-        path: /spec/storageClassName
+        path: /spec/volumeClaimTemplates/0/spec/storageClassName
         value: local-path
 
   # Inject woodpecker DB credentials from secret into postgres container
   - target:
-      kind: Deployment
+      kind: StatefulSet
       name: postgres
     patch: |
       - op: add
