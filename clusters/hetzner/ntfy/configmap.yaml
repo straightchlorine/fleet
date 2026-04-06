@@ -16,3 +16,4 @@ data:
     behind-proxy: true
     attachment-cache-dir: /var/cache/ntfy/attachments
     keepalive-interval: 45s
+    web-root: disable
