@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/ntfy
+  - namespace.yaml
+  - configmap.yaml
+  - ingress.yaml
+
+patches:
+  # Use local-path storage on k3s
+  - target:
+      kind: PersistentVolumeClaim
+      name: ntfy-cache
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: local-path

@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: yopass
+  namespace: yopass
+  labels:
+    app: yopass
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: yopass
+  template:
+    metadata:
+      labels:
+        app: yopass
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: yopass
+          image: jhaals/yopass:13.1.0
+          imagePullPolicy: IfNotPresent
+          args:
+            - --database
+            - memcached
+            - --memcached
+            - localhost:11211
+          ports:
+            - name: http
+              containerPort: 1337
+              protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+                - /yopass-server
+                - --health-check
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
+          readinessProbe:
+            exec:
+              command:
+                - /yopass-server
+                - --health-check
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 2
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+        - name: memcached
+          image: memcached:1.6-alpine
+          imagePullPolicy: IfNotPresent
+          args:
+            - -m
+            - "64"
+          ports:
+            - name: memcached
+              containerPort: 11211
+              protocol: TCP
+          livenessProbe:
+            tcpSocket:
+              port: memcached
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 100m
+              memory: 96Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL

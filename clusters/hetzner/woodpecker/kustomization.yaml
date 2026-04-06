@@ -30,11 +30,11 @@ patches:
         path: /spec/template/spec/containers/0/resources
         value:
           requests:
-            cpu: 100m
-            memory: 256Mi
-          limits:
-            cpu: 500m
+            cpu: 200m
             memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
 
   # Bump agent resources
   - target:
@@ -45,11 +45,11 @@ patches:
         path: /spec/template/spec/containers/0/resources
         value:
           requests:
-            cpu: 150m
-            memory: 384Mi
+            cpu: 500m
+            memory: 512Mi
           limits:
-            cpu: 1000m
-            memory: 1Gi
+            cpu: 2000m
+            memory: 2Gi
 
   # Use local-path storage on k3s
   - target:
