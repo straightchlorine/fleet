@@ -6,3 +6,4 @@ resources:
   - namespace.yaml
   - configmap.yaml
   - ingress.yaml
+  - sealed-gatus-security.yaml
