@@ -7,10 +7,6 @@ metadata:
     app: headscale
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt"
-    # Critical: prevent Traefik from killing long-lived Noise protocol connections
-    traefik.ingress.kubernetes.io/router.transport.respondingTimeouts.readTimeout: "0"
-    traefik.ingress.kubernetes.io/router.transport.respondingTimeouts.writeTimeout: "0"
-    traefik.ingress.kubernetes.io/router.transport.respondingTimeouts.idleTimeout: "600s"
 spec:
   ingressClassName: traefik
   tls:
