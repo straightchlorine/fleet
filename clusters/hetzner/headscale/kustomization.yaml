@@ -6,11 +6,10 @@ resources:
   - ../../../base/headplane
   - namespace.yaml
   - configmap-headscale.yaml
-  - configmap-headplane.yaml
   - ingress-headscale.yaml
   - ingress-headplane.yaml
   - middleware.yaml
-  - sealed-headplane-cookie-secret.yaml
+  - sealed-headplane-config.yaml
 
 patches:
   # Use local-path storage on k3s
