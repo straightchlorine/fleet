@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: headscale
-          image: headscale/headscale:0.25.0
+          image: headscale/headscale:0.28.0
           imagePullPolicy: IfNotPresent
           command:
             - headscale
@@ -39,6 +39,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /var/lib/headscale
+            - name: run
+              mountPath: /var/run/headscale
             - name: config
               mountPath: /etc/headscale/config.yaml
               subPath: config.yaml
@@ -82,6 +84,8 @@ spec:
         - name: data
           persistentVolumeClaim:
             claimName: headscale-data
+        - name: run
+          emptyDir: {}
         - name: config
           configMap:
             name: headscale-config
