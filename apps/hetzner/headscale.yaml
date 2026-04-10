@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: headscale
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
+    path: clusters/hetzner/headscale
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: headscale
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

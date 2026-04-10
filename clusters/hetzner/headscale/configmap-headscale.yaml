@@ -1,0 +1,88 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headscale-config
+  namespace: headscale
+  labels:
+    app: headscale
+data:
+  config.yaml: |
+    server_url: https://vpn.codextechnologies.org
+    listen_addr: 0.0.0.0:8080
+    metrics_listen_addr: 0.0.0.0:9090
+    grpc_listen_addr: 0.0.0.0:50443
+    grpc_allow_insecure: true
+
+    noise:
+      private_key_path: /var/lib/headscale/noise_private.key
+
+    prefixes:
+      v6: fd7a:115c:a1e0::/48
+      v4: 100.64.0.0/10
+
+    derp:
+      server:
+        enabled: false
+      urls:
+        - https://controlplane.tailscale.com/derpmap/default
+      auto_update_enabled: true
+      update_frequency: 24h
+
+    database:
+      type: sqlite
+      sqlite:
+        path: /var/lib/headscale/db.sqlite
+
+    dns:
+      magic_dns: true
+      base_domain: vpn.codextechnologies.org
+      nameservers:
+        global:
+          - 1.1.1.1
+          - 8.8.8.8
+
+    policy:
+      mode: file
+      path: /etc/headscale/acl.hujson
+
+    log:
+      level: info
+
+    logtail:
+      enabled: false
+
+    randomize_client_port: false
+
+  acl.hujson: |
+    {
+      // ACL for Headscale tailnet
+      // Restrict as needed once nodes are registered
+
+      groups: {
+        "group:admin": [],
+      },
+
+      acls: [
+        // Allow all traffic within the VPN (tighten later)
+        {
+          action: "accept",
+          src: ["*"],
+          dst: ["*:*"],
+        },
+      ],
+
+      ssh: [
+        {
+          action: "check",
+          src: ["autogroup:members"],
+          dst: ["autogroup:self"],
+          users: ["root", "nonroot"],
+        },
+        {
+          action: "accept",
+          src: ["group:admin"],
+          dst: ["autogroup:self"],
+          users: ["*"],
+        },
+      ],
+    }
