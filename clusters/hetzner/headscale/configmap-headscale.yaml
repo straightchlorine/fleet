@@ -55,34 +55,12 @@ data:
 
   acl.hujson: |
     {
-      // ACL for Headscale tailnet
-      // Restrict as needed once nodes are registered
-
-      "groups": {
-        "group:admin": []
-      },
-
+      // Allow all traffic within the tailnet (tighten later)
       "acls": [
-        // Allow all traffic within the VPN (tighten later)
         {
           "action": "accept",
           "src": ["*"],
           "dst": ["*:*"]
-        }
-      ],
-
-      "ssh": [
-        {
-          "action": "check",
-          "src": ["autogroup:members"],
-          "dst": ["autogroup:self"],
-          "users": ["root", "nonroot"]
-        },
-        {
-          "action": "accept",
-          "src": ["group:admin"],
-          "dst": ["autogroup:self"],
-          "users": ["*"]
         }
       ]
     }
