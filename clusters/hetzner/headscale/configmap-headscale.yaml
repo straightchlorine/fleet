@@ -58,31 +58,31 @@ data:
       // ACL for Headscale tailnet
       // Restrict as needed once nodes are registered
 
-      groups: {
-        "group:admin": [],
+      "groups": {
+        "group:admin": []
       },
 
-      acls: [
+      "acls": [
         // Allow all traffic within the VPN (tighten later)
         {
-          action: "accept",
-          src: ["*"],
-          dst: ["*:*"],
-        },
+          "action": "accept",
+          "src": ["*"],
+          "dst": ["*:*"]
+        }
       ],
 
-      ssh: [
+      "ssh": [
         {
-          action: "check",
-          src: ["autogroup:members"],
-          dst: ["autogroup:self"],
-          users: ["root", "nonroot"],
+          "action": "check",
+          "src": ["autogroup:members"],
+          "dst": ["autogroup:self"],
+          "users": ["root", "nonroot"]
         },
         {
-          action: "accept",
-          src: ["group:admin"],
-          dst: ["autogroup:self"],
-          users: ["*"],
-        },
-      ],
+          "action": "accept",
+          "src": ["group:admin"],
+          "dst": ["autogroup:self"],
+          "users": ["*"]
+        }
+      ]
     }
