@@ -10,6 +10,7 @@ resources:
   - ingress-headscale.yaml
   - ingress-headplane.yaml
   - middleware.yaml
+  - sealed-headplane-cookie-secret.yaml
 
 patches:
   # Use local-path storage on k3s
