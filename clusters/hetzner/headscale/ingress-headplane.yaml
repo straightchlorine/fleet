@@ -7,7 +7,6 @@ metadata:
     app: headplane
   annotations:
     cert-manager.io/cluster-issuer: "letsencrypt"
-    traefik.ingress.kubernetes.io/router.middlewares: headscale-strip-admin@kubernetescrd
 spec:
   ingressClassName: traefik
   tls:
