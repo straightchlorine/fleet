@@ -7,3 +7,11 @@ spec:
   stripPrefix:
     prefixes:
       - /admin
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: compress
+  namespace: headscale
+spec:
+  compress: {}
