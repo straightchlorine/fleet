@@ -17,11 +17,6 @@ data:
       maximum-number-of-results: 100
       maximum-number-of-events: 50
 
-    connectivity:
-      checker:
-        target: 1.1.1.1:443
-        interval: 60s
-
     security:
       basic:
         username: "${GATUS_SECURITY_BASIC_USERNAME}"
@@ -43,7 +38,7 @@ data:
 
     alerting:
       ntfy:
-        url: https://ntfy.codextechnologies.org
+        url: http://ntfy.ntfy.svc.cluster.local
         topic: gatus-alerts
         priority: 4
         token: "${GATUS_NTFY_TOKEN}"
