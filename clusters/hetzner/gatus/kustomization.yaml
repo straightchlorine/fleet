@@ -7,3 +7,13 @@ resources:
   - configmap.yaml
   - ingress.yaml
   - sealed-gatus-security.yaml
+
+patches:
+  # Use local-path storage on k3s
+  - target:
+      kind: PersistentVolumeClaim
+      name: gatus-data
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: local-path

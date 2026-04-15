@@ -7,10 +7,39 @@ metadata:
     app: gatus
 data:
   config.yaml: |
+    metrics: true
+    concurrency: 5
+
+    storage:
+      type: sqlite
+      path: /data/gatus.db
+      caching: true
+      maximum-number-of-results: 100
+      maximum-number-of-events: 50
+
+    connectivity:
+      checker:
+        target: 1.1.1.1:53
+        interval: 60s
+
     security:
       basic:
         username: "${GATUS_SECURITY_BASIC_USERNAME}"
         password-bcrypt-base64: "${GATUS_SECURITY_BASIC_PASSWORD_BCRYPT}"
+
+    ui:
+      title: "Codex Status"
+      header: "Codex Technologies"
+      dashboard-heading: "Service Health"
+      dashboard-subheading: "Real-time monitoring of infrastructure and services"
+      link: "https://piotrkrzysztof.dev"
+      default-sort-by: group
+      dark-mode: true
+      buttons:
+        - name: "Blog"
+          link: "https://piotrkrzysztof.dev"
+        - name: "CI"
+          link: "https://ci.codextechnologies.org"
 
     alerting:
       ntfy:
@@ -27,11 +56,13 @@ data:
     endpoints:
       - name: Woodpecker CI
         group: infrastructure
-        url: http://woodpecker-server.woodpecker/health
+        url: http://woodpecker-server.woodpecker.svc.cluster.local/health
         interval: 60s
+        client:
+          timeout: 5s
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 1000"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: ntfy
         ui:
@@ -39,11 +70,13 @@ data:
 
       - name: ntfy
         group: infrastructure
-        url: http://ntfy.ntfy/v1/health
+        url: http://ntfy.ntfy.svc.cluster.local/v1/health
         interval: 60s
+        client:
+          timeout: 5s
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 1000"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: ntfy
         ui:
@@ -51,11 +84,13 @@ data:
 
       - name: Headscale VPN
         group: infrastructure
-        url: http://headscale.headscale/health
+        url: http://headscale.headscale.svc.cluster.local/health
         interval: 60s
+        client:
+          timeout: 5s
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 1000"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: ntfy
         ui:
@@ -63,11 +98,13 @@ data:
 
       - name: Headplane Admin
         group: infrastructure
-        url: http://headplane.headscale/
+        url: http://headplane.headscale.svc.cluster.local/
         interval: 60s
+        client:
+          timeout: 5s
         conditions:
           - "[STATUS] == any(200, 302, 404)"
-          - "[RESPONSE_TIME] < 1000"
+          - "[RESPONSE_TIME] < 500"
         alerts:
           - type: ntfy
         ui:
