@@ -87,3 +87,14 @@ spec:
       ports:
         - protocol: TCP
           port: 3000
+    # Internal: yopass health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: yopass
+          podSelector:
+            matchLabels:
+              app: yopass
+      ports:
+        - protocol: TCP
+          port: 1337
