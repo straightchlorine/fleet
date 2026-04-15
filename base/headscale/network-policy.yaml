@@ -32,6 +32,17 @@ spec:
           port: 8080
         - protocol: TCP
           port: 50443
+    # Allow health checks from gatus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: gatus
+          podSelector:
+            matchLabels:
+              app: gatus
+      ports:
+        - protocol: TCP
+          port: 8080
   egress:
     # DNS
     - to:

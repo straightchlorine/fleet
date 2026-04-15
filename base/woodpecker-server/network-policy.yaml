@@ -30,6 +30,17 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+    # Allow health checks from gatus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: gatus
+          podSelector:
+            matchLabels:
+              app: gatus
+      ports:
+        - protocol: TCP
+          port: 8000
   egress:
     # Allow to shared postgres in databases namespace
     - to:

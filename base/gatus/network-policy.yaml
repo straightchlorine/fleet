@@ -36,12 +36,54 @@ spec:
           port: 53
         - protocol: UDP
           port: 53
-    # External HTTPS (monitoring endpoints + ntfy alerts)
+    # External HTTPS (ntfy alerting via public URL)
     - to:
         - ipBlock:
             cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
           port: 443
+    # Internal: woodpecker-server health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: woodpecker
+          podSelector:
+            matchLabels:
+              app: woodpecker-server
+      ports:
+        - protocol: TCP
+          port: 8000
+    # Internal: ntfy health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: ntfy
+          podSelector:
+            matchLabels:
+              app: ntfy
+      ports:
         - protocol: TCP
           port: 80
+    # Internal: headscale health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: headscale
+          podSelector:
+            matchLabels:
+              app: headscale
+      ports:
+        - protocol: TCP
+          port: 8080
+    # Internal: headplane health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: headscale
+          podSelector:
+            matchLabels:
+              app: headplane
+      ports:
+        - protocol: TCP
+          port: 3000

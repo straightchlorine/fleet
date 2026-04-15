@@ -27,20 +27,51 @@ data:
     endpoints:
       - name: Woodpecker CI
         group: infrastructure
-        url: https://ci.codextechnologies.org/healthz
+        url: http://woodpecker-server.woodpecker/healthz
         interval: 60s
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 5000"
+          - "[RESPONSE_TIME] < 1000"
         alerts:
           - type: ntfy
 
       - name: ntfy
         group: infrastructure
-        url: https://ntfy.codextechnologies.org/v1/health
+        url: http://ntfy.ntfy/v1/health
         interval: 60s
         conditions:
           - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
+        alerts:
+          - type: ntfy
+
+      - name: Headscale VPN
+        group: infrastructure
+        url: http://headscale.headscale/health
+        interval: 60s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
+        alerts:
+          - type: ntfy
+
+      - name: Headplane Admin
+        group: infrastructure
+        url: http://headplane.headscale/
+        interval: 60s
+        conditions:
+          - "[STATUS] == any(200, 302, 404)"
+          - "[RESPONSE_TIME] < 1000"
+        alerts:
+          - type: ntfy
+
+      - name: Blog
+        group: external
+        url: https://piotrkrzysztof.dev/
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
           - "[RESPONSE_TIME] < 5000"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
         alerts:
           - type: ntfy
