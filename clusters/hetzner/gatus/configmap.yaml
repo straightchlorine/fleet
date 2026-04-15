@@ -19,7 +19,7 @@ data:
 
     connectivity:
       checker:
-        target: 1.1.1.1:53
+        target: 1.1.1.1:443
         interval: 60s
 
     security:
