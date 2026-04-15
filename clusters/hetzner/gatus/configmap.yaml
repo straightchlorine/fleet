@@ -27,13 +27,15 @@ data:
     endpoints:
       - name: Woodpecker CI
         group: infrastructure
-        url: http://woodpecker-server.woodpecker/healthz
+        url: http://woodpecker-server.woodpecker/health
         interval: 60s
         conditions:
           - "[STATUS] == 200"
           - "[RESPONSE_TIME] < 1000"
         alerts:
           - type: ntfy
+        ui:
+          hide-url: true
 
       - name: ntfy
         group: infrastructure
@@ -44,6 +46,8 @@ data:
           - "[RESPONSE_TIME] < 1000"
         alerts:
           - type: ntfy
+        ui:
+          hide-url: true
 
       - name: Headscale VPN
         group: infrastructure
@@ -54,6 +58,8 @@ data:
           - "[RESPONSE_TIME] < 1000"
         alerts:
           - type: ntfy
+        ui:
+          hide-url: true
 
       - name: Headplane Admin
         group: infrastructure
@@ -64,6 +70,8 @@ data:
           - "[RESPONSE_TIME] < 1000"
         alerts:
           - type: ntfy
+        ui:
+          hide-url: true
 
       - name: Blog
         group: external
