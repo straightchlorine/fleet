@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: observability
+  labels:
+    app: alloy
+data:
+  config.alloy: |
+    // Discover all pods in the cluster
+    discovery.kubernetes "pods" {
+      role = "pod"
+    }
+
+    // Add useful labels from K8s metadata + build the path filter
+    discovery.relabel "pods" {
+      targets = discovery.kubernetes.pods.targets
+
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_name"]
+        target_label  = "container"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app"]
+        target_label  = "app"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        target_label  = "node"
+      }
+      // Only collect logs from pods on the same node as this Alloy instance
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        regex         = sys.env("HOSTNAME")
+        action        = "keep"
+      }
+      // Construct the host path for the log file
+      rule {
+        source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
+        separator     = "/"
+        target_label  = "__path__"
+        replacement   = "/var/log/pods/*$1/$2/*.log"
+      }
+    }
+
+    // Tail log files
+    loki.source.file "pods" {
+      targets    = discovery.relabel.pods.output
+      forward_to = [loki.process.cleanup.receiver]
+    }
+
+    // Drop noisy/empty lines, parse container runtime format
+    loki.process "cleanup" {
+      forward_to = [loki.write.default.receiver]
+
+      // Drop empty lines
+      stage.match {
+        selector = "{namespace=~\".+\"}"
+        stage.drop {
+          expression = "^\\s*$"
+        }
+      }
+    }
+
+    // Push to Loki
+    loki.write "default" {
+      endpoint {
+        url = "http://loki.observability.svc.cluster.local:3100/loki/api/v1/push"
+      }
+    }

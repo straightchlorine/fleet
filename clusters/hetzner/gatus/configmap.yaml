@@ -119,6 +119,34 @@ data:
         ui:
           hide-url: true
 
+      - name: Grafana
+        group: infrastructure
+        url: http://grafana.observability.svc.cluster.local/api/health
+        interval: 60s
+        client:
+          timeout: 5s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: ntfy
+        ui:
+          hide-url: true
+
+      - name: Loki
+        group: infrastructure
+        url: http://loki.observability.svc.cluster.local:3100/ready
+        interval: 60s
+        client:
+          timeout: 5s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 500"
+        alerts:
+          - type: ntfy
+        ui:
+          hide-url: true
+
       - name: Blog
         group: external
         url: https://piotrkrzysztof.dev/

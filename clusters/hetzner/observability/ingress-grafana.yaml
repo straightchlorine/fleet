@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: grafana
+  namespace: observability
+  labels:
+    app: grafana
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - monitoring.codextechnologies.org
+      secretName: grafana-tls
+  rules:
+    - host: monitoring.codextechnologies.org
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana
+                port:
+                  number: 80

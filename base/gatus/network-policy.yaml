@@ -98,3 +98,25 @@ spec:
       ports:
         - protocol: TCP
           port: 1337
+    # Internal: grafana health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+          podSelector:
+            matchLabels:
+              app: grafana
+      ports:
+        - protocol: TCP
+          port: 3000
+    # Internal: loki health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+          podSelector:
+            matchLabels:
+              app: loki
+      ports:
+        - protocol: TCP
+          port: 3100

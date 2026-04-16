@@ -1,0 +1,56 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: loki-netpol
+  namespace: observability
+  labels:
+    app: loki
+spec:
+  podSelector:
+    matchLabels:
+      app: loki
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Push from Alloy
+    - from:
+        - podSelector:
+            matchLabels:
+              app: alloy
+      ports:
+        - protocol: TCP
+          port: 3100
+    # Query from Grafana
+    - from:
+        - podSelector:
+            matchLabels:
+              app: grafana
+      ports:
+        - protocol: TCP
+          port: 3100
+    # Health checks from gatus
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: gatus
+          podSelector:
+            matchLabels:
+              app: gatus
+      ports:
+        - protocol: TCP
+          port: 3100
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53

@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../../base/loki
+  - ../../../base/alloy
+  - ../../../base/grafana
+  - namespace.yaml
+  - configmap-loki.yaml
+  - configmap-alloy.yaml
+  - configmap-grafana-datasources.yaml
+  - sealed-grafana-admin.yaml
+  - ingress-grafana.yaml
+
+patches:
+  # Use local-path storage on k3s for Loki and Grafana PVCs
+  - target:
+      kind: PersistentVolumeClaim
+      name: loki-data
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: local-path
+  - target:
+      kind: PersistentVolumeClaim
+      name: grafana-data
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: local-path

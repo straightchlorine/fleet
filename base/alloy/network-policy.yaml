@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: alloy-netpol
+  namespace: observability
+  labels:
+    app: alloy
+spec:
+  podSelector:
+    matchLabels:
+      app: alloy
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    # Allow self-introspection / metrics within namespace
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+      ports:
+        - protocol: TCP
+          port: 12345
+  egress:
+    # DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+          podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: TCP
+          port: 53
+        - protocol: UDP
+          port: 53
+    # Push to Loki
+    - to:
+        - podSelector:
+            matchLabels:
+              app: loki
+      ports:
+        - protocol: TCP
+          port: 3100
+    # Kubernetes API (for pod metadata discovery)
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 6443
