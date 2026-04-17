@@ -59,6 +59,10 @@ data:
       // `headscale users list` and adjust if the username differs.
       "groups": {
         "group:admins": ["piotrkrzysztof@"],
+        // Wrap ci@ in a group -- headscale's policy resolver is unreliable
+        // with bare user references in tagOwners. Going through a group
+        // makes ownership resolution deterministic.
+        "group:ci":     ["ci@"],
       },
 
       "tagOwners": {
@@ -66,8 +70,8 @@ data:
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
         // GitHub Actions runners join ephemerally under the dedicated `ci@`
-        // user; admins can also mint keys if needed.
-        "tag:ci":                ["ci@"],
+        // user (via group:ci).
+        "tag:ci":                ["group:ci"],
         // Reserved for the home router (not joined yet). Declared here so
         // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
