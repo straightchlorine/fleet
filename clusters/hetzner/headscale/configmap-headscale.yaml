@@ -52,7 +52,6 @@ data:
       enabled: false
 
     randomize_client_port: false
-
   acl.hujson: |
     {
       // Headscale user that owns every tag. Usernames must end with `@`
@@ -68,7 +67,7 @@ data:
         "tag:honeywatch-egress": ["group:admins"],
         // GitHub Actions runners join ephemerally under the dedicated `ci@`
         // user; admins can also mint keys if needed.
-        "tag:ci":                ["group:admins", "ci@"],
+        "tag:ci":                ["ci@"],
         // Reserved for the home router (not joined yet). Declared here so
         // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
