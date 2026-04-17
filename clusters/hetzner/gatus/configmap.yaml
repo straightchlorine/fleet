@@ -158,6 +158,29 @@ data:
         alerts:
           - type: ntfy
 
+      - name: Honeywatch API
+        group: external
+        url: https://honey.piotrkrzysztof.dev/api/stats
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 5000"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+          - "[BODY].total_sessions >= 0"
+        alerts:
+          - type: ntfy
+
+      - name: Honeywatch Dashboard
+        group: external
+        url: https://honey.piotrkrzysztof.dev/
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 5000"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: ntfy
+
       - name: QP
         group: docs
         url: https://docs.qp.piotrkrzysztof.dev/
