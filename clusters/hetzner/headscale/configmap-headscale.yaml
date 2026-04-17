@@ -66,8 +66,9 @@ data:
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
-        // GitHub Actions runners join ephemerally to deploy to the honeypot.
-        "tag:ci":                ["group:admins"],
+        // GitHub Actions runners join ephemerally under the dedicated `ci@`
+        // user; admins can also mint keys if needed.
+        "tag:ci":                ["group:admins", "ci@"],
         // Reserved for the home router (not joined yet). Declared here so
         // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
