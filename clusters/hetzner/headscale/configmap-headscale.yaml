@@ -54,21 +54,27 @@ data:
     randomize_client_port: false
   acl.hujson: |
     {
-      // Headscale user that owns every tag. Usernames must end with `@`
-      // (Headscale 0.24+ namespaces local users this way). Verify with
-      // `headscale users list` and adjust if the username differs.
+      // Headscale users referenced here must exist via `headscale users
+      // create` and are written with an `@` suffix (headscale 0.24+
+      // namespace syntax). Verify names with `headscale users list`.
       "groups": {
+        // Human operators; full tailnet access.
         "group:admins": ["piotrkrzysztof@"],
+        // Service account for GitHub Actions CI runners.
+        "group:ci":     ["ci@"],
       },
 
       "tagOwners": {
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
-        // GitHub Actions runners join ephemerally to deploy. Previously
-        // named `tag:ci` but headscale rejected registrations against that
-        // string despite policy validating fine -- renamed to tag:cicd.
-        "tag:cicd":              ["group:admins"],
+        // GitHub Actions ephemeral runners.
+        // IMPORTANT: mint preauth keys with `--user <ci-id> --tags tag:cicd`
+        // and do NOT pass `--advertise-tags` on the client -- headscale 0.28
+        // rejects registrations that combine a tagged preauth key with a
+        // matching client-side advertise. Server applies the tag from the
+        // key automatically.
+        "tag:cicd":              ["group:ci"],
         // Reserved for the home router (not joined yet). Declared here so
         // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
