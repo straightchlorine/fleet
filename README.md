@@ -1,6 +1,6 @@
 # Fleet
 
-Personal GitOps repo for my homelab Kubernetes clusters.
+Personal GitOps repo for my Kubernetes clusters.
 
 ## Live status
 
