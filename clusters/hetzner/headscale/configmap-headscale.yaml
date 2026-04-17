@@ -65,9 +65,10 @@ data:
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
-        // TEMPORARY: tag:ci owned by admins for diagnosis. Revert to
-        // group:ci / dedicated ci user once we understand the resolver.
-        "tag:ci":                ["group:admins"],
+        // GitHub Actions runners join ephemerally to deploy. Previously
+        // named `tag:ci` but headscale rejected registrations against that
+        // string despite policy validating fine -- renamed to tag:cicd.
+        "tag:cicd":              ["group:admins"],
         // Reserved for the home router (not joined yet). Declared here so
         // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
@@ -91,7 +92,7 @@ data:
         // CI runners may only SSH into the honeypot -- nothing else.
         {
           "action": "accept",
-          "src": ["tag:ci"],
+          "src": ["tag:cicd"],
           "dst": ["tag:honeypot:22"],
         },
 
