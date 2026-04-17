@@ -66,6 +66,8 @@ data:
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
+        // GitHub Actions runners join ephemerally to deploy to the honeypot.
+        "tag:ci":                ["group:admins"],
         // Reserved for the home router (not joined yet). Declared here so
         // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
@@ -84,6 +86,13 @@ data:
           "action": "accept",
           "src": ["tag:honeywatch-egress"],
           "dst": ["tag:honeypot:5000"],
+        },
+
+        // CI runners may only SSH into the honeypot -- nothing else.
+        {
+          "action": "accept",
+          "src": ["tag:ci"],
+          "dst": ["tag:honeypot:22"],
         },
 
         // tag:router has no rules yet -- add when the router joins.
