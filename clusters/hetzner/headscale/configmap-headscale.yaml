@@ -55,10 +55,11 @@ data:
 
   acl.hujson: |
     {
-      // Headscale user that owns every tag. Verify with
+      // Headscale user that owns every tag. Usernames must end with `@`
+      // (Headscale 0.24+ namespaces local users this way). Verify with
       // `headscale users list` and adjust if the username differs.
       "groups": {
-        "group:admins": ["piotrkrzysztof"],
+        "group:admins": ["piotrkrzysztof@"],
       },
 
       "tagOwners": {
