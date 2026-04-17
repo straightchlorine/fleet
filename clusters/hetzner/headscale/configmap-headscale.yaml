@@ -55,12 +55,36 @@ data:
 
   acl.hujson: |
     {
-      // Allow all traffic within the tailnet (tighten later)
+      // Headscale user that owns every tag. Verify with
+      // `headscale users list` and adjust if the username differs.
+      "groups": {
+        "group:admins": ["piotrkrzysztof"],
+      },
+
+      "tagOwners": {
+        "tag:admin":             ["group:admins"],
+        "tag:honeypot":          ["group:admins"],
+        "tag:honeywatch-egress": ["group:admins"],
+        // Reserved for the home router (not joined yet). Declared here so
+        // the tag is usable the moment the router connects.
+        "tag:router":            ["group:admins"],
+      },
+
       "acls": [
+        // Admin devices (laptop, phone, etc.) get full tailnet access.
         {
           "action": "accept",
-          "src": ["*"],
-          "dst": ["*:*"]
-        }
-      ]
+          "src": ["group:admins", "tag:admin"],
+          "dst": ["*:*"],
+        },
+
+        // honeywatch egress pod may only reach the honeypot's API port.
+        {
+          "action": "accept",
+          "src": ["tag:honeywatch-egress"],
+          "dst": ["tag:honeypot:5000"],
+        },
+
+        // tag:router has no rules yet -- add when the router joins.
+      ],
     }
