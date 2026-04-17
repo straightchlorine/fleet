@@ -26,9 +26,10 @@ spec:
           args:
             - run
             - /etc/alloy/config.alloy
-            - --storage.path=/var/lib/alloy/data
+            - --storage.path=/tmp/alloy
             - --server.http.listen-addr=0.0.0.0:12345
             - --cluster.enabled=false
+            - --disable-reporting
           env:
             - name: HOSTNAME
               valueFrom:
@@ -43,8 +44,6 @@ spec:
               mountPath: /etc/alloy/config.alloy
               subPath: config.alloy
               readOnly: true
-            - name: data
-              mountPath: /var/lib/alloy/data
             - name: pod-logs
               mountPath: /var/log/pods
               readOnly: true
@@ -85,8 +84,6 @@ spec:
         - name: config
           configMap:
             name: alloy-config
-        - name: data
-          emptyDir: {}
         - name: pod-logs
           hostPath:
             path: /var/log/pods
