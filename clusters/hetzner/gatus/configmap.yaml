@@ -160,26 +160,32 @@ data:
 
       - name: Honeywatch API
         group: external
-        url: https://honey.piotrkrzysztof.dev/api/stats
+        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/stats
         interval: 120s
+        client:
+          timeout: 5s
         conditions:
           - "[STATUS] == 200"
           - "[RESPONSE_TIME] < 5000"
-          - "[CERTIFICATE_EXPIRATION] > 240h"
           - "[BODY].total_sessions >= 0"
         alerts:
           - type: ntfy
+        ui:
+          hide-url: true
 
       - name: Honeywatch Dashboard
         group: external
-        url: https://honey.piotrkrzysztof.dev/
+        url: http://dashboard.honeywatch.svc.cluster.local/
         interval: 120s
+        client:
+          timeout: 5s
         conditions:
           - "[STATUS] == 200"
           - "[RESPONSE_TIME] < 5000"
-          - "[CERTIFICATE_EXPIRATION] > 240h"
         alerts:
           - type: ntfy
+        ui:
+          hide-url: true
 
       - name: QP
         group: docs

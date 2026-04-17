@@ -120,3 +120,25 @@ spec:
       ports:
         - protocol: TCP
           port: 3100
+    # Internal: honeywatch dashboard health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: honeywatch
+          podSelector:
+            matchLabels:
+              app: dashboard
+      ports:
+        - protocol: TCP
+          port: 80
+    # Internal: honeywatch API (via tailscale egress) health check
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: honeywatch
+          podSelector:
+            matchLabels:
+              app: honeywatch-egress
+      ports:
+        - protocol: TCP
+          port: 5000
