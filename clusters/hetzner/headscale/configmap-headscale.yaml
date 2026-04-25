@@ -38,8 +38,8 @@ data:
       base_domain: hs.internal
       nameservers:
         global:
-          - 1.1.1.1
-          - 8.8.8.8
+          - 9.9.9.9
+          - 149.112.112.112
 
     policy:
       mode: file
@@ -54,13 +54,18 @@ data:
     randomize_client_port: false
   acl.hujson: |
     {
-      // Headscale users referenced here must exist via `headscale users
-      // create` and are written with an `@` suffix (headscale 0.24+
-      // namespace syntax). Verify names with `headscale users list`.
+      // Traffic model -- four isolated lanes:
+      //
+      //   Lane 1  Admin     group:admins / tag:admin   ->  *:*
+      //   Lane 2  Prod      tag:honeywatch-egress      ->  tag:honeypot:5000
+      //   Lane 3  CI/CD     tag:cicd                   ->  tag:honeypot:2022
+      //   Lane 4  Home      tag:router                 ->  tag:router:* (self only)
+      //
+      // Implicit deny blocks everything not listed. Lanes never cross
+      // unless a rule explicitly bridges them.
+
       "groups": {
-        // Human operators; full tailnet access.
         "group:admins": ["piotrkrzysztof@"],
-        // Service account for GitHub Actions CI runners.
         "group:ci":     ["ci@"],
       },
 
@@ -68,40 +73,57 @@ data:
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
-        // GitHub Actions ephemeral runners.
-        // IMPORTANT: mint preauth keys with `--user <ci-id> --tags tag:cicd`
-        // and do NOT pass `--advertise-tags` on the client -- headscale 0.28
-        // rejects registrations that combine a tagged preauth key with a
-        // matching client-side advertise. Server applies the tag from the
-        // key automatically.
         "tag:cicd":              ["group:ci"],
-        // Reserved for the home router (not joined yet). Declared here so
-        // the tag is usable the moment the router connects.
         "tag:router":            ["group:admins"],
       },
 
       "acls": [
-        // Admin devices (laptop, phone, etc.) get full tailnet access.
+        // ---- Lane 1: Admin ----
+        // Human operator devices get unrestricted tailnet access.
+        // This includes reaching the home subnet once the router
+        // advertises it (see autoApprovers below).
         {
           "action": "accept",
           "src": ["group:admins", "tag:admin"],
           "dst": ["*:*"],
         },
 
-        // honeywatch egress pod may only reach the honeypot's API port.
+        // ---- Lane 2: Production ----
+        // honeywatch egress pod -> honeypot API only. Cannot reach
+        // admin SSH (2022), the cluster, or any other tailnet node.
         {
           "action": "accept",
           "src": ["tag:honeywatch-egress"],
           "dst": ["tag:honeypot:5000"],
         },
 
-        // CI runners may only SSH into the honeypot -- nothing else.
+        // ---- Lane 3: CI/CD ----
+        // Ephemeral GitHub Actions runners -> honeypot deploy SSH only.
         {
           "action": "accept",
           "src": ["tag:cicd"],
           "dst": ["tag:honeypot:2022"],
         },
 
-        // tag:router has no rules yet -- add when the router joins.
+        // ---- Lane 4: Home network ----
+        // The router can talk to other tag:router nodes (mesh between
+        // home sites if you add more routers later). It CANNOT reach
+        // production infrastructure, the honeypot, or CI/CD.
+        // Admin devices reach home via the Lane 1 wildcard above.
+        {
+          "action": "accept",
+          "src": ["tag:router"],
+          "dst": ["tag:router:*"],
+        },
       ],
+
+      // Auto-approve subnet routes advertised by the home router so
+      // admin devices can reach the home LAN without manual approval.
+      "autoApprovers": {
+        "routes": {
+          "192.168.100.0/24": ["tag:router"],
+          "192.168.50.0/24": ["tag:router"],
+          "192.168.20.0/24": ["tag:router"],
+        },
+      },
     }
