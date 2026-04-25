@@ -99,7 +99,7 @@ data:
         {
           "action": "accept",
           "src": ["tag:cicd"],
-          "dst": ["tag:honeypot:22"],
+          "dst": ["tag:honeypot:2022"],
         },
 
         // tag:router has no rules yet -- add when the router joins.
