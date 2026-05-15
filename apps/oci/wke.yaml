@@ -1,0 +1,43 @@
+# ArgoCD Application for wikipedia-knowledge-explorer on OCI A1.Flex.
+#
+# Repo URL is GitHub - for now.
+#
+# Image updater is configured to track all three WKE images (backend,
+# frontend, summarizer) with semver tags and writes back to the in-repo
+# kustomization.yaml on every release.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wke
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: |
+      backend=ghcr.io/straightchlorine/wke-backend,
+      frontend=ghcr.io/straightchlorine/wke-frontend,
+      summarizer=ghcr.io/straightchlorine/wke-summarizer
+    argocd-image-updater.argoproj.io/backend.update-strategy: semver
+    argocd-image-updater.argoproj.io/backend.allow-tags: "regexp:^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
+    argocd-image-updater.argoproj.io/frontend.update-strategy: semver
+    argocd-image-updater.argoproj.io/frontend.allow-tags: "regexp:^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
+    argocd-image-updater.argoproj.io/summarizer.update-strategy: semver
+    argocd-image-updater.argoproj.io/summarizer.allow-tags: "regexp:^v?[0-9]+\\.[0-9]+\\.[0-9]+$"
+    argocd-image-updater.argoproj.io/write-back-method: git
+    argocd-image-updater.argoproj.io/write-back-target: kustomization
+    argocd-image-updater.argoproj.io/git-branch: master
+    argocd-image-updater.argoproj.io/git-commit-user: straightchlorine
+    argocd-image-updater.argoproj.io/git-commit-email: 44237356+straightchlorine@users.noreply.github.com
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/straightchlorine/wikipedia-knowledge-explorer.git
+    path: k8s/base
+    targetRevision: master
+  destination:
+    server: https://10.10.0.2:6443
+    namespace: wke
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true
