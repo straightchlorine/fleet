@@ -1,0 +1,41 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: argocd-install
+  namespace: argocd
+  annotations:
+    # Sync before anything else: CRDs (Applications, AppProjects, ApplicationSets)
+    # must exist before other Apps that reference them can reconcile.
+    argocd.argoproj.io/sync-wave: "-10"
+spec:
+  project: default
+  source:
+    repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
+    path: clusters/hetzner/argocd-install
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+      # prune intentionally disabled: a missing manifest must not cause
+      # ArgoCD to delete itself. Removal of components requires a manual
+      # `kubectl delete` after the manifest is removed from git.
+      prune: false
+    syncOptions:
+      # Required: upstream CRDs exceed the 256 KiB annotation limit that
+      # client-side apply uses to track last-applied-configuration.
+      - ServerSideApply=true
+      - CreateNamespace=false
+      - RespectIgnoreDifferences=true
+  # Don't fight the controller over fields k8s mutates on its own.
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas
+    - group: apiextensions.k8s.io
+      kind: CustomResourceDefinition
+      jqPathExpressions:
+        - .spec.conversion.webhook.clientConfig.caBundle
