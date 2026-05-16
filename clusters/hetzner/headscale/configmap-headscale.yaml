@@ -54,16 +54,6 @@ data:
     randomize_client_port: false
   acl.hujson: |
     {
-      // Traffic model -- four isolated lanes:
-      //
-      //   Lane 1  Admin     group:admins / tag:admin   ->  *:*
-      //   Lane 2  Prod      tag:honeywatch-egress      ->  tag:honeypot:5000
-      //   Lane 3  CI/CD     tag:cicd                   ->  tag:honeypot:2022
-      //   Lane 4  Home      tag:router                 ->  tag:router:* (self only)
-      //
-      // Implicit deny blocks everything not listed. Lanes never cross
-      // unless a rule explicitly bridges them.
-
       "groups": {
         "group:admins": ["piotrkrzysztof@"],
         "group:ci":     ["ci@"],
@@ -73,31 +63,36 @@ data:
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
+        // GitHub Actions ephemeral runners.
+        // NOTE: mint preauth keys with `--user <ci-id> --tags tag:cicd`
+        // and do not pass `--advertise-tags` on the client.
+        //
+        // Rejects registrations that combine a tagged preauth key with a
+        // matching client-side advertise. Server applies the tag from the
+        // key automatically.
         "tag:cicd":              ["group:ci"],
+        // Tag for the home router.
         "tag:router":            ["group:admins"],
+        // VPS hosts (the rocky/debian nodes themselves, not pods).
+        // Used both for the multicluster ArgoCD transport and for SSH access.
+        "tag:cluster-hetzner":   ["group:admins"],
+        "tag:cluster-oci":       ["group:admins"],
       },
 
       "acls": [
-        // ---- Lane 1: Admin ----
-        // Human operator devices get unrestricted tailnet access.
-        // This includes reaching the home subnet once the router
-        // advertises it (see autoApprovers below).
         {
           "action": "accept",
           "src": ["group:admins", "tag:admin"],
           "dst": ["*:*"],
         },
 
-        // ---- Lane 2: Production ----
-        // honeywatch egress pod -> honeypot API only. Cannot reach
-        // admin SSH (2022), the cluster, or any other tailnet node.
+        // Honeywatch egress pod -> honeypot API only (no ssh).
         {
           "action": "accept",
           "src": ["tag:honeywatch-egress"],
           "dst": ["tag:honeypot:5000"],
         },
 
-        // ---- Lane 3: CI/CD ----
         // Ephemeral GitHub Actions runners -> honeypot deploy SSH only.
         {
           "action": "accept",
@@ -105,20 +100,22 @@ data:
           "dst": ["tag:honeypot:2022"],
         },
 
-        // ---- Lane 4: Home network ----
-        // The router can talk to other tag:router nodes (mesh between
-        // home sites if you add more routers later). It CANNOT reach
-        // production infrastructure, the honeypot, or CI/CD.
-        // Admin devices reach home via the Lane 1 wildcard above.
+        // The router can talk to other tag:router nodes
         {
           "action": "accept",
           "src": ["tag:router"],
           "dst": ["tag:router:*"],
         },
+
+        // ArgoCD on Hetzner reaches the OCI rke2 API server over tailnet.
+        {
+          "action": "accept",
+          "src": ["tag:cluster-hetzner"],
+          "dst": ["tag:cluster-oci:6443"],
+        },
       ],
 
-      // Auto-approve subnet routes advertised by the home router so
-      // admin devices can reach the home LAN without manual approval.
+      // Auto-approve subnet routes advertised by the home router.
       "autoApprovers": {
         "routes": {
           "192.168.100.0/24": ["tag:router"],
