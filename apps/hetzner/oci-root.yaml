@@ -1,0 +1,19 @@
+# App-of-Apps on Hetzner; children target destination.name=oci over the tailnet
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oci-apps
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
+    path: apps/oci
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true

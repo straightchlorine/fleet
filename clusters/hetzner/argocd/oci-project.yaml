@@ -1,0 +1,16 @@
+# AppProject scoping ArgoCD's authority over the OCI cluster.
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: oci
+  namespace: argocd
+spec:
+  description: Apps deployed to the OCI rke2 cluster over the tailnet.
+  sourceRepos:
+    - https://codeberg.org/piotrkrzysztof/fleet.git
+  destinations:
+    - name: oci
+  clusterResourceWhitelist: []
+  namespaceResourceWhitelist:
+    - group: "*"
+      kind: "*"

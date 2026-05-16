@@ -4,8 +4,7 @@ metadata:
   name: argocd-install
   namespace: argocd
   annotations:
-    # Sync before anything else: CRDs (Applications, AppProjects, ApplicationSets)
-    # must exist before other Apps that reference them can reconcile.
+    # CRDs must land before any App that references them
     argocd.argoproj.io/sync-wave: "-10"
 spec:
   project: default
@@ -19,17 +18,13 @@ spec:
   syncPolicy:
     automated:
       selfHeal: true
-      # prune intentionally disabled: a missing manifest must not cause
-      # ArgoCD to delete itself. Removal of components requires a manual
-      # `kubectl delete` after the manifest is removed from git.
+      # prune off so a missing manifest can never delete ArgoCD itself
       prune: false
     syncOptions:
-      # Required: upstream CRDs exceed the 256 KiB annotation limit that
-      # client-side apply uses to track last-applied-configuration.
+      # ServerSideApply required: upstream CRDs exceed the 256 KiB client-side annotation limit
       - ServerSideApply=true
       - CreateNamespace=false
       - RespectIgnoreDifferences=true
-  # Don't fight the controller over fields k8s mutates on its own.
   ignoreDifferences:
     - group: apps
       kind: Deployment
