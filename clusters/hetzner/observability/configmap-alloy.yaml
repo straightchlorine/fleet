@@ -68,6 +68,12 @@ data:
     loki.process "cleanup" {
       forward_to = [loki.write.default.receiver]
 
+      // Parse CRI format: "<time> <stream> <tag> <log>" and promote stream to a label
+      stage.cri {}
+      stage.labels {
+        values = { stream = "" }
+      }
+
       // Drop empty lines
       stage.match {
         selector = "{namespace=~\".+\"}"
