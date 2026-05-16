@@ -46,14 +46,21 @@ data:
       rule {
         source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
         separator     = "/"
+        regex         = "(.+)/(.+)"
         target_label  = "__path__"
         replacement   = "/var/log/pods/*$1/$2/*.log"
       }
     }
 
+    // Expand the glob `*` in __path__ into concrete file paths
+    local.file_match "pods" {
+      path_targets = discovery.relabel.pods.output
+      sync_period  = "10s"
+    }
+
     // Tail log files
     loki.source.file "pods" {
-      targets    = discovery.relabel.pods.output
+      targets    = local.file_match.pods.targets
       forward_to = [loki.process.cleanup.receiver]
     }
 
