@@ -160,7 +160,7 @@ data:
 
       - name: Honeywatch API
         group: external
-        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/stats
+        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/stats/totals
         interval: 120s
         client:
           timeout: 5s
