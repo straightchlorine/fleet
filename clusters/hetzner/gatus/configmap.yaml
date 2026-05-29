@@ -158,15 +158,48 @@ data:
         alerts:
           - type: ntfy
 
-      - name: Honeywatch API
+      # Liveness: the API process is up and serving (no DB touched).
+      - name: Honeywatch API Liveness
         group: external
-        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/stats/totals
-        interval: 120s
+        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/health
+        interval: 300s
         client:
           timeout: 5s
         conditions:
           - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 5000"
+          - "[BODY].status == ok"
+        alerts:
+          - type: ntfy
+        ui:
+          hide-url: true
+
+      # Readiness: Postgres is reachable (500ms statement timeout). Splits a DB
+      # outage from a process outage above.
+      - name: Honeywatch API Readiness
+        group: external
+        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/health/ready
+        interval: 300s
+        client:
+          timeout: 5s
+        conditions:
+          - "[STATUS] == 200"
+          - "[BODY].status == ready"
+        alerts:
+          - type: ntfy
+        ui:
+          hide-url: true
+
+      # Data path + query latency: runs a real aggregate query. RESPONSE_TIME is
+      # the early-warning signal as the sessions table grows.
+      - name: Honeywatch API
+        group: external
+        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/v1/stats/totals
+        interval: 300s
+        client:
+          timeout: 5s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 2000"
           - "[BODY].total_sessions >= 0"
         alerts:
           - type: ntfy
