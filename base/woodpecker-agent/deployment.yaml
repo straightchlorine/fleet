@@ -29,7 +29,7 @@ spec:
         supplementalGroups: [999]
       containers:
         - name: agent
-          image: woodpeckerci/woodpecker-agent:v3.13.0
+          image: woodpeckerci/woodpecker-agent:v3.15.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: agent
