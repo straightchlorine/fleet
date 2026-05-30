@@ -90,7 +90,7 @@ data:
         {
           "action": "accept",
           "src": ["tag:honeywatch-egress"],
-          "dst": ["tag:honeypot:5000"],
+          "dst": ["tag:honeypot:5000,5432"],
         },
 
         // Ephemeral GitHub Actions runners -> honeypot deploy SSH only.

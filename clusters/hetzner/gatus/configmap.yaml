@@ -162,27 +162,29 @@ data:
       - name: Honeywatch API Liveness
         group: external
         url: http://honeypot-api.honeywatch.svc.cluster.local:5000/health
-        interval: 300s
+        interval: 30s
         client:
-          timeout: 5s
+          timeout: 10s
         conditions:
           - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
           - "[BODY].status == ok"
         alerts:
           - type: ntfy
         ui:
           hide-url: true
 
-      # Readiness: Postgres is reachable (500ms statement timeout). Splits a DB
-      # outage from a process outage above.
+      # Readiness: Postgres is reachable.
+      # Splits a DB outage from a process outage above.
       - name: Honeywatch API Readiness
         group: external
         url: http://honeypot-api.honeywatch.svc.cluster.local:5000/health/ready
         interval: 300s
         client:
-          timeout: 5s
+          timeout: 10s
         conditions:
           - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 1000"
           - "[BODY].status == ready"
         alerts:
           - type: ntfy
