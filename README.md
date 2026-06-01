@@ -4,7 +4,7 @@ Personal GitOps repo for my Kubernetes clusters.
 
 <div align="center">
 
-**Repository:** [Codeberg](https://codeberg.org/piotrkrzysztof/fleet) (primary) · [GitHub](https://github.com/straightchlorine/fleet)(mirror)
+**Repository:** [Codeberg](https://codeberg.org/piotrkrzysztof/fleet) (primary) · [GitHub](https://github.com/straightchlorine/fleet) (mirror)
 
 </div>
 
