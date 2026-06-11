@@ -54,6 +54,7 @@ data:
       "groups": {
         "group:admins": ["piotrkrzysztof@"],
         "group:ci":     ["ci@"],
+        "group:cpi":    ["cpi@"],
       },
 
       "tagOwners": {
@@ -109,6 +110,20 @@ data:
           "action": "accept",
           "src": ["tag:cluster-hetzner"],
           "dst": ["tag:cluster-oci:6443"],
+        },
+
+        // cpi devices talk to each other.
+        {
+          "action": "accept",
+          "src": ["group:cpi"],
+          "dst": ["group:cpi:*"],
+        },
+
+        // cpi can respond to admin (enables ICMP ping from admin side).
+        {
+          "action": "accept",
+          "src": ["group:cpi"],
+          "dst": ["group:admins:*"],
         },
       ],
 
