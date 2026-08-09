@@ -21,11 +21,7 @@ spec:
         fsGroup: 1000  # Matches nonroot uid; enables PVC access
         fsGroupChangePolicy: OnRootMismatch
       initContainers:
-        # ponytail: no registry to push a custom image to yet, so install
-        # the [code] extra fresh on every start into a shared emptyDir
-        # instead of baking it into the image. Costs a few seconds + a
-        # small download per restart; revisit with a custom image if
-        # restarts become frequent.
+        # Install [code] fresh per restart (no registry yet); revisit with custom image
         - name: install-code-extra
           image: ghcr.io/headroomlabs-ai/headroom:main-nonroot
           command: ["pip", "install", "--no-cache-dir", "--target=/packages", "headroom-ai[code]"]
@@ -47,17 +43,12 @@ spec:
               value: "on"
             - name: HEADROOM_WORKSPACE_DIR
               value: /state/.headroom
-            # ponytail: subPath-mounting the same PVC a second time never
-            # bound correctly on this node (kept showing the image's own
-            # root-owned layer instead of the volume). Pointing HF_HOME at
-            # a path inside the already-mounted /state volume sidesteps
-            # subPath entirely.
+            # SubPath mount bug on this node; use path inside /state instead
             - name: HF_HOME
               value: /state/hf-cache
             - name: PYTHONPATH
               value: /packages
-            # ponytail: no app-level token — access is gated by the tailnet
-            # ACL (group:cpi/admins -> this host:port only), not a header.
+            # Tailnet ACL gated; no app-level token
             - name: HEADROOM_OUTPUT_SHAPER
               value: "1"
           ports:
