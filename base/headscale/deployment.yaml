@@ -6,9 +6,11 @@ metadata:
   labels:
     app: headscale
 spec:
-  replicas: 1
+  replicas: 2  # HA; SQLite lock contention minimal with short transactions
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1  # Ensure 1 pod always running
   selector:
     matchLabels:
       app: headscale
