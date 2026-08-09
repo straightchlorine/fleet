@@ -8,7 +8,7 @@ metadata:
 data:
   config.yaml: |
     metrics: true
-    concurrency: 8
+    concurrency: 8  # Tuned to cluster load (8 parallel probes)
 
     storage:
       type: sqlite
@@ -44,7 +44,7 @@ data:
         token: "${GATUS_NTFY_TOKEN}"
         default-alert:
           enabled: true
-          failure-threshold: 3
+          failure-threshold: 3  # Alert after 3 failures; resolve after 2 successes
           success-threshold: 2
           send-on-resolved: true
 
@@ -158,7 +158,7 @@ data:
         alerts:
           - type: ntfy
 
-      # Liveness: the API process is up and serving (no DB touched).
+      # Liveness: API up, no DB query.
       - name: Honeywatch API Liveness
         group: external
         url: http://honeypot-api.honeywatch.svc.cluster.local:5000/health
@@ -174,8 +174,7 @@ data:
         ui:
           hide-url: true
 
-      # Readiness: Postgres is reachable.
-      # Splits a DB outage from a process outage above.
+      # Readiness: Postgres reachable (splits DB vs process failures).
       - name: Honeywatch API Readiness
         group: external
         url: http://honeypot-api.honeywatch.svc.cluster.local:5000/health/ready
@@ -191,8 +190,7 @@ data:
         ui:
           hide-url: true
 
-      # Data path + query latency: runs a real aggregate query. RESPONSE_TIME is
-      # the early-warning signal as the sessions table grows.
+      # Data path + query latency; early-warning as sessions table grows.
       - name: Honeywatch API
         group: external
         url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/v1/stats/totals

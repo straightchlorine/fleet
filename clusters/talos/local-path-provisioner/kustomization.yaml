@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - https://raw.githubusercontent.com/rancher/local-path-provisioner/v0.0.37/deploy/local-path-storage.yaml
+
+patches:
+  # local-path-provisioner's helper pods use hostPath to touch the node's
+  # filesystem when creating/deleting volumes — that's fundamentally
+  # incompatible with the cluster's baseline PodSecurity default. Scope the
+  # exemption to this dedicated storage namespace only; app namespaces
+  # (e.g. headroom) stay under baseline/restricted.
+  - target:
+      kind: Namespace
+      name: local-path-storage
+    patch: |
+      - op: add
+        path: /metadata/labels
+        value:
+          pod-security.kubernetes.io/enforce: privileged

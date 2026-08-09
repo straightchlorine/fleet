@@ -36,13 +36,13 @@ data:
         source_labels = ["__meta_kubernetes_pod_node_name"]
         target_label  = "node"
       }
-      // Only collect logs from pods on the same node as this Alloy instance
+      // Node-local collection reduces volume and network.
       rule {
         source_labels = ["__meta_kubernetes_pod_node_name"]
         regex         = sys.env("HOSTNAME")
         action        = "keep"
       }
-      // Construct the host path for the log file
+      // Map pod uid+container to kubelet log path.
       rule {
         source_labels = ["__meta_kubernetes_pod_uid", "__meta_kubernetes_pod_container_name"]
         separator     = "/"
@@ -64,17 +64,15 @@ data:
       forward_to = [loki.process.cleanup.receiver]
     }
 
-    // Drop noisy/empty lines, parse container runtime format
+    // Parse CRI logs, drop empty to reduce noise.
     loki.process "cleanup" {
       forward_to = [loki.write.default.receiver]
 
-      // Parse CRI format: "<time> <stream> <tag> <log>" and promote stream to a label
       stage.cri {}
       stage.labels {
         values = { stream = "" }
       }
 
-      // Drop empty lines
       stage.match {
         selector = "{namespace=~\".+\"}"
         stage.drop {

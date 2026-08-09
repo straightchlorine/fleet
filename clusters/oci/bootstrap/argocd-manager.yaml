@@ -4,12 +4,3 @@ kind: ServiceAccount
 metadata:
   name: argocd-manager
   namespace: kube-system
----
-apiVersion: v1
-kind: Secret
-metadata:
-  name: argocd-manager-token
-  namespace: kube-system
-  annotations:
-    kubernetes.io/service-account.name: argocd-manager
-type: kubernetes.io/service-account-token

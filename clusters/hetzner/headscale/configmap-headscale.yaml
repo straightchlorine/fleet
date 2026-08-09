@@ -37,6 +37,10 @@ data:
       magic_dns: true
       base_domain: hs.internal
       override_local_dns: false
+      extra_records:
+        - name: headroom.hs.internal
+          type: A
+          value: 192.168.20.30
 
     policy:
       mode: file
@@ -61,18 +65,10 @@ data:
         "tag:admin":             ["group:admins"],
         "tag:honeypot":          ["group:admins"],
         "tag:honeywatch-egress": ["group:admins"],
-        // GitHub Actions ephemeral runners.
-        // NOTE: mint preauth keys with `--user <ci-id> --tags tag:cicd`
-        // and do not pass `--advertise-tags` on the client.
-        //
-        // Rejects registrations that combine a tagged preauth key with a
-        // matching client-side advertise. Server applies the tag from the
-        // key automatically.
+        // Preauth key tags server-applied; client advertise-tags rejected.
         "tag:cicd":              ["group:ci"],
-        // Tag for the home router.
         "tag:router":            ["group:admins"],
-        // VPS hosts (the rocky/debian nodes themselves, not pods).
-        // Used both for the multicluster ArgoCD transport and for SSH access.
+        // Rocky/Debian nodes for multicluster ArgoCD and SSH.
         "tag:cluster-hetzner":   ["group:admins"],
         "tag:cluster-oci":       ["group:admins"],
       },
@@ -112,18 +108,25 @@ data:
           "dst": ["tag:cluster-oci:6443"],
         },
 
-        // cpi devices talk to each other.
+        // cpi mesh network.
         {
           "action": "accept",
           "src": ["group:cpi"],
           "dst": ["group:cpi:*"],
         },
 
-        // cpi can respond to admin (enables ICMP ping from admin side).
+        // cpi→admin for admin ICMP verification.
         {
           "action": "accept",
           "src": ["group:cpi"],
           "dst": ["group:admins:*"],
+        },
+
+        // cpi→headroom NodePort 30878 via router's 192.168.20.0/24.
+        {
+          "action": "accept",
+          "src": ["group:cpi"],
+          "dst": ["192.168.20.30:30878"],
         },
       ],
 

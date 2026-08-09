@@ -8,7 +8,7 @@ resources:
   - ingress.yaml
 
 patches:
-  # Use local-path storage on k3s
+  # k3s lacks network storage; use node-local provisioner
   - target:
       kind: PersistentVolumeClaim
       name: ntfy-cache

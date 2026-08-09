@@ -1,0 +1,105 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: headroom
+  namespace: headroom
+  labels:
+    app: headroom
+spec:
+  replicas: 2  # HA; fits within node budget
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: headroom
+  template:
+    metadata:
+      labels:
+        app: headroom
+    spec:
+      securityContext:
+        fsGroup: 1000  # Matches nonroot uid; enables PVC access
+        fsGroupChangePolicy: OnRootMismatch
+      initContainers:
+        # ponytail: no registry to push a custom image to yet, so install
+        # the [code] extra fresh on every start into a shared emptyDir
+        # instead of baking it into the image. Costs a few seconds + a
+        # small download per restart; revisit with a custom image if
+        # restarts become frequent.
+        - name: install-code-extra
+          image: ghcr.io/headroomlabs-ai/headroom:main-nonroot
+          command: ["pip", "install", "--no-cache-dir", "--target=/packages", "headroom-ai[code]"]
+          volumeMounts:
+            - name: code-extra
+              mountPath: /packages
+      containers:
+        - name: headroom
+          image: ghcr.io/headroomlabs-ai/headroom:main-nonroot
+          imagePullPolicy: Always
+          args:
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8787"
+            - --code-aware
+          env:
+            - name: HEADROOM_TELEMETRY
+              value: "on"
+            - name: HEADROOM_WORKSPACE_DIR
+              value: /state/.headroom
+            # ponytail: subPath-mounting the same PVC a second time never
+            # bound correctly on this node (kept showing the image's own
+            # root-owned layer instead of the volume). Pointing HF_HOME at
+            # a path inside the already-mounted /state volume sidesteps
+            # subPath entirely.
+            - name: HF_HOME
+              value: /state/hf-cache
+            - name: PYTHONPATH
+              value: /packages
+            # ponytail: no app-level token — access is gated by the tailnet
+            # ACL (group:cpi/admins -> this host:port only), not a header.
+            - name: HEADROOM_OUTPUT_SHAPER
+              value: "1"
+          ports:
+            - name: http
+              containerPort: 8787
+              protocol: TCP
+          volumeMounts:
+            - name: state
+              mountPath: /state
+            - name: code-extra
+              mountPath: /packages
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 15
+            timeoutSeconds: 5
+            failureThreshold: 3  # ~45s tolerance; headroom may hang during cold model loads
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3  # ~30s tolerance; matches shorter liveness window
+          resources:
+            requests:
+              cpu: 50m        # Baseline idle consumption
+              memory: 128Mi   # Cold start minimum
+            limits:
+              cpu: 500m       # ~2-3 concurrent inference requests
+              memory: 1Gi     # HF cache (~600Mi) + headroom for spike
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: state
+          persistentVolumeClaim:
+            claimName: headroom-state
+        - name: code-extra
+          emptyDir: {}

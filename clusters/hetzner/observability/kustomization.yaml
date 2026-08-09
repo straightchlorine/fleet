@@ -13,7 +13,7 @@ resources:
   - ingress-grafana.yaml
 
 patches:
-  # Use local-path storage on k3s for Loki and Grafana PVCs
+  # k3s lacks network storage; use node-local provisioner for Loki and Grafana
   - target:
       kind: PersistentVolumeClaim
       name: loki-data

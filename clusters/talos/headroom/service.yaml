@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: headroom
+  namespace: headroom
+  labels:
+    app: headroom
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8787
+      targetPort: 8787
+      nodePort: 30878  # Hardcoded for tailnet routing via headscale ACL (cpi→192.168.20.30:30878)
+      protocol: TCP
+  selector:
+    app: headroom
