@@ -8,7 +8,13 @@ metadata:
 spec:
   replicas: 2  # HA; fits within node budget
   strategy:
-    type: Recreate
+    # Recreate took both pods down on every rollout, which is the one thing
+    # 2 replicas can protect against on a single node. RWO PVC is fine here:
+    # access is per-node, and every pod lands on the same node.
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
   selector:
     matchLabels:
       app: headroom
@@ -24,6 +30,15 @@ spec:
         # Install [code] fresh per restart (no registry yet); revisit with custom image
         - name: install-code-extra
           image: ghcr.io/headroomlabs-ai/headroom:main-nonroot
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000  # Image's USER is the name "nonroot"; kubelet needs it numeric to verify
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            seccompProfile:
+              type: RuntimeDefault
           command: ["pip", "install", "--no-cache-dir", "--target=/packages", "headroom-ai[code]"]
           volumeMounts:
             - name: code-extra
@@ -65,24 +80,28 @@ spec:
               path: /health
               port: http
             initialDelaySeconds: 20
-            periodSeconds: 15
-            timeoutSeconds: 5
-            failureThreshold: 3  # ~45s tolerance; headroom may hang during cold model loads
+            periodSeconds: 20
+            timeoutSeconds: 10
+            failureThreshold: 5  # ~100s; don't kill the pod over a transient stall
           readinessProbe:
             httpGet:
               path: /health
               port: http
             initialDelaySeconds: 15
             periodSeconds: 10
-            timeoutSeconds: 5
+            timeoutSeconds: 10
             failureThreshold: 3  # ~30s tolerance; matches shorter liveness window
           resources:
             requests:
-              cpu: 50m        # Baseline idle consumption
-              memory: 128Mi   # Cold start minimum
+              cpu: 500m       # Reserve real capacity; compression is CPU-bound
+              memory: 512Mi   # Cold start minimum
             limits:
-              cpu: 500m       # ~2-3 concurrent inference requests
-              memory: 1Gi     # HF cache (~600Mi) + headroom for spike
+              # Container sees nproc=4 and sizes its worker pool for it, so a
+              # sub-core cap means constant CFS throttling (was 500m: 80% of
+              # periods throttled, 18s stalls, liveness kills). 2x1500m leaves
+              # ~950m of the node's 3950m for the control plane.
+              cpu: 1500m
+              memory: 1536Mi  # HF cache (~600Mi) + compression buffers
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:

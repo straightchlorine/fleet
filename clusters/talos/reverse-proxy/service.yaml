@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-reverse-proxy
+  namespace: reverse-proxy
+  labels:
+    app: nginx-reverse-proxy
+spec:
+  type: NodePort
+  ports:
+    - name: https
+      port: 443
+      targetPort: 8443
+      nodePort: 30443  # Hardcoded for consistent access via 192.168.20.30:30443
+      protocol: TCP
+  selector:
+    app: nginx-reverse-proxy

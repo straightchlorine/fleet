@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+  namespace: reverse-proxy
+data:
+  headroom.conf: |
+    server {
+      listen 8443 ssl;
+      server_name headroom.hs.internal;
+
+      ssl_certificate /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+      ssl_protocols TLSv1.2 TLSv1.3;
+      ssl_ciphers HIGH:!aNULL:!MD5;
+
+      # Probes hit this, not the upstream: a 502 from headroom must not get
+      # nginx killed and backed off long after headroom itself recovered.
+      location = /nginx-health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+      }
+
+      location / {
+        proxy_pass http://headroom.headroom.svc.cluster.local:8787;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 300s;
+        proxy_connect_timeout 300s;
+      }
+    }
