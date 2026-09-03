@@ -35,10 +35,16 @@ data:
 
     dns:
       magic_dns: true
-      base_domain: hs.internal
+      base_domain: codex.internal
       override_local_dns: false
       extra_records:
-        - name: headroom.hs.internal
+        - name: headroom.codex.internal
+          type: A
+          value: 192.168.20.30
+        - name: infisical.codex.internal
+          type: A
+          value: 192.168.20.30
+        - name: kiwix.codex.internal
           type: A
           value: 192.168.20.30
 
@@ -115,14 +121,7 @@ data:
           "dst": ["group:cpi:*"],
         },
 
-        // cpi→admin for admin ICMP verification.
-        {
-          "action": "accept",
-          "src": ["group:cpi"],
-          "dst": ["group:admins:*"],
-        },
-
-        // cpi→headroom NodePort 30878 via router's 192.168.20.0/24.
+        // cpi -> headroom NodePort 30878 via router's 192.168.20.0/24.
         {
           "action": "accept",
           "src": ["group:cpi"],

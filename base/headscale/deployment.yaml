@@ -6,11 +6,9 @@ metadata:
   labels:
     app: headscale
 spec:
-  replicas: 2  # HA; SQLite lock contention minimal with short transactions
+  replicas: 1  # SQLite on RWO: a second replica splits map-poll state
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1  # Ensure 1 pod always running
+    type: Recreate  # RWO PVC: old pod must release it before the new one mounts
   selector:
     matchLabels:
       app: headscale
@@ -23,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: headscale
-          image: headscale/headscale:0.28.0
+          image: headscale/headscale:0.29.3
           imagePullPolicy: IfNotPresent
           command:
             - headscale
