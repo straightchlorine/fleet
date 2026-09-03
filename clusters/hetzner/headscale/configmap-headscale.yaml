@@ -58,7 +58,6 @@ data:
     logtail:
       enabled: false
 
-    randomize_client_port: false
   acl.hujson: |
     {
       "groups": {
