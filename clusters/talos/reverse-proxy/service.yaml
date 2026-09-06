@@ -11,7 +11,7 @@ spec:
     - name: https
       port: 443
       targetPort: 8443
-      nodePort: 30443  # Hardcoded for consistent access via 192.168.20.30:30443
+      nodePort: 443
       protocol: TCP
   selector:
     app: nginx-reverse-proxy

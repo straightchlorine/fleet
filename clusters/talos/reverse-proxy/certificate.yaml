@@ -1,0 +1,14 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: reverse-proxy-internal
+  namespace: reverse-proxy
+spec:
+  secretName: reverse-proxy-tls-internal
+  issuerRef:
+    name: letsencrypt-dns01
+    kind: ClusterIssuer
+  commonName: internal.codextechnologies.org
+  dnsNames:
+    - internal.codextechnologies.org
+    - "*.internal.codextechnologies.org"
