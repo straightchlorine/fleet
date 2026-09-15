@@ -37,16 +37,22 @@ data:
       magic_dns: true
       base_domain: codex.internal
       override_local_dns: false
-      extra_records:
-        - name: headroom.codex.internal
-          type: A
-          value: 192.168.20.30
-        - name: infisical.codex.internal
-          type: A
-          value: 192.168.20.30
-        - name: kiwix.codex.internal
-          type: A
-          value: 192.168.20.30
+      # Both zones are authoritative on the OPNsense Unbound, reachable at its
+      # tailnet address - so tailnet and LAN clients resolve identically and
+      # records are maintained in one place instead of duplicated here.
+      nameservers:
+        split:
+          internal.codextechnologies.org:
+            - 100.64.0.4
+          codex.home.arpa:
+            - 100.64.0.4
+          # get the dns in order later
+          # internal.codextechnologies.org:
+          #   - 192.168.20.10
+          #   - 100.64.0.4
+          # codex.home.arpa:
+          #   - 192.168.20.10
+          #   - 100.64.0.4
 
     policy:
       mode: file
@@ -57,7 +63,6 @@ data:
 
     logtail:
       enabled: false
-
   acl.hujson: |
     {
       "groups": {
@@ -72,6 +77,7 @@ data:
         "tag:honeywatch-egress": ["group:admins"],
         // Preauth key tags server-applied; client advertise-tags rejected.
         "tag:cicd":              ["group:ci"],
+        "tag:ansible-controller": ["group:admins"],
         "tag:router":            ["group:admins"],
         // Rocky/Debian nodes for multicluster ArgoCD and SSH.
         "tag:cluster-hetzner":   ["group:admins"],
@@ -96,6 +102,13 @@ data:
         {
           "action": "accept",
           "src": ["tag:cicd"],
+          "dst": ["tag:honeypot:2022"],
+        },
+
+        // Ansible controller -> honeypot admin SSH only.
+        {
+          "action": "accept",
+          "src": ["tag:ansible-controller"],
           "dst": ["tag:honeypot:2022"],
         },
 
