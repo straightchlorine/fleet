@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: loki
+  namespace: observability
+  labels:
+    app: loki
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+    traefik.ingress.kubernetes.io/router.middlewares: observability-loki-push-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - logs.codextechnologies.org
+      secretName: loki-tls
+  rules:
+    - host: logs.codextechnologies.org
+      http:
+        paths:
+          # Push only. The query API stays cluster-internal - Grafana reaches
+          # Loki over the service, and nothing outside needs to read logs.
+          - path: /loki/api/v1/push
+            pathType: Exact
+            backend:
+              service:
+                name: loki
+                port:
+                  number: 3100

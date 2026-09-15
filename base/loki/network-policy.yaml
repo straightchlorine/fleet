@@ -13,6 +13,16 @@ spec:
     - Ingress
     - Egress
   ingress:
+    # Push from outside the cluster (host Alloy agents) via the Traefik
+    # ingress; the ingress itself enforces basic auth and a source allowlist.
+    - from:
+        - namespaceSelector: {}
+          podSelector:
+            matchLabels:
+              app.kubernetes.io/name: traefik
+      ports:
+        - protocol: TCP
+          port: 3100
     # Push from Alloy
     - from:
         - podSelector:

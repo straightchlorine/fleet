@@ -1,19 +1,20 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: grafana-netpol
+  name: prometheus-netpol
   namespace: observability
   labels:
-    app: grafana
+    app: prometheus
 spec:
   podSelector:
     matchLabels:
-      app: grafana
+      app: prometheus
   policyTypes:
     - Ingress
     - Egress
   ingress:
-    # Allow from Traefik ingress controller
+    # Remote-write from outside the cluster via the Traefik ingress, which
+    # enforces basic auth. Only /api/v1/write is routed there.
     - from:
         - namespaceSelector: {}
           podSelector:
@@ -21,8 +22,16 @@ spec:
               app.kubernetes.io/name: traefik
       ports:
         - protocol: TCP
-          port: 3000
-    # Allow health checks from gatus
+          port: 9090
+    # Queries from Grafana
+    - from:
+        - podSelector:
+            matchLabels:
+              app: grafana
+      ports:
+        - protocol: TCP
+          port: 9090
+    # Health checks from gatus
     - from:
         - namespaceSelector:
             matchLabels:
@@ -32,7 +41,7 @@ spec:
               app: gatus
       ports:
         - protocol: TCP
-          port: 3000
+          port: 9090
   egress:
     # DNS
     - to:
@@ -47,19 +56,15 @@ spec:
           port: 53
         - protocol: UDP
           port: 53
-    # Loki query
+    # Target discovery talks to the API server, which has no pod selector to
+    # match - it is reached on the host network.
     - to:
-        - podSelector:
-            matchLabels:
-              app: loki
+        - ipBlock:
+            cidr: 0.0.0.0/0
       ports:
         - protocol: TCP
-          port: 3100
-    # Prometheus query
+          port: 6443
+    # Scraping annotated pods: the port is per-target, so it cannot be
+    # enumerated here. Scoped to in-cluster destinations only.
     - to:
-        - podSelector:
-            matchLabels:
-              app: prometheus
-      ports:
-        - protocol: TCP
-          port: 9090
+        - namespaceSelector: {}

@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: prometheus-basic-auth
+  namespace: observability
+spec:
+  encryptedData:
+    users: AgAHxG1fDBZUU4cOiXff5hVKswHzMS3xlJpF9xzxUAcEZ31Yi3XYLWc5FLYgzKRVBUzy+S+KeYyaV/O4LxQA1Sh34QrTEkOdHf60hSHQBJK9sfvpk+IJ7gX6+OlP4kE4BTY6b9y3bJ742WluGFzZ7wAuohUSBLw/UuHPFiCB9dUqDWlt+NgTfAuKap3d1NP4JucT6nngZ6ivLsWZNl08XHIuyJzUQEVo6tIb/FKeGsKd5fUwSrDrEtdpweZxBR9U+L+K+d6ncvXY8HNblSDNtSUSRk5rba2jHR4FStLFWSPF1uoORfuizfYnbU37et9t2SKxk+F0m/sthNcjVBwTUaS4/tK+615ps9RDH+3DrB2gXyeeJYVMiqMatwYO8iZPqKDXv00VuXC3etFPk496fIQ9nH9BD3mTkJieCGzHXNo8rn7tSvLjEoQgUMBcQIDwTIEulnqF00TBRcDaNVBIFRYOgHowcuB8Mo2ks/M6vFmJQGinQpfpRzLew6T043f/5ttFpn/S0kU+AqxASP+w8ikIHP569Xn7rRUlvlg2q1reesl+QXCURU4ON5dvxAjh9f5iiBKSJROQbUYWUK+OD70NDtnR3aiityk8oWfKJ3U5d+2nXFHXbBP1d3xdDgdNGna0THLhpFpHE+5iO9vfLFlRVqN2B3jLGnt4NGo8ErAJmS+St0KGnbToZHOp8TzLWebewJLTXhUAvoCo5xcGgp3wBNdlzpu3nmvxO6jafudwf3OPjhaoj6C1k0wGhRzixty26lHkBU5g29mB1MT7UqHZLRxDdQ==
+  template:
+    metadata:
+      name: prometheus-basic-auth
+      namespace: observability

@@ -63,6 +63,8 @@ spec:
               value: /packages/venv/lib/python3.13/site-packages
             - name: HEADROOM_OUTPUT_SHAPER
               value: "1"
+            - name: ORT_DISABLE_TELEMETRY
+              value: "1"
           ports:
             - name: http
               containerPort: 8787

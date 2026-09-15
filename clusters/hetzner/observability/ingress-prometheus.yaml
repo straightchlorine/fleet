@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: prometheus
+  namespace: observability
+  labels:
+    app: prometheus
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt"
+    traefik.ingress.kubernetes.io/router.middlewares: observability-prometheus-push-auth@kubernetescrd
+spec:
+  ingressClassName: traefik
+  tls:
+    - hosts:
+        - metrics.codextechnologies.org
+      secretName: prometheus-tls
+  rules:
+    - host: metrics.codextechnologies.org
+      http:
+        paths:
+          # Remote-write only. The query API and the Prometheus UI stay
+          # cluster-internal - Grafana reaches them over the service.
+          - path: /api/v1/write
+            pathType: Exact
+            backend:
+              service:
+                name: prometheus
+                port:
+                  number: 9090

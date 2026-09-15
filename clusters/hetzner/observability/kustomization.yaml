@@ -5,18 +5,32 @@ resources:
   - ../../../base/loki
   - ../../../base/alloy
   - ../../../base/grafana
+  - ../../../base/prometheus
   - namespace.yaml
   - configmap-loki.yaml
   - configmap-alloy.yaml
   - configmap-grafana-datasources.yaml
   - sealed-grafana-admin.yaml
   - ingress-grafana.yaml
+  - configmap-prometheus.yaml
+  - middleware.yaml
+  - sealed-loki-basic-auth.yaml
+  - sealed-prometheus-basic-auth.yaml
+  - ingress-loki.yaml
+  - ingress-prometheus.yaml
 
 patches:
   # k3s lacks network storage; use node-local provisioner for Loki and Grafana
   - target:
       kind: PersistentVolumeClaim
       name: loki-data
+    patch: |
+      - op: add
+        path: /spec/storageClassName
+        value: local-path
+  - target:
+      kind: PersistentVolumeClaim
+      name: prometheus-data
     patch: |
       - op: add
         path: /spec/storageClassName
