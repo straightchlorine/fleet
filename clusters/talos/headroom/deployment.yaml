@@ -7,11 +7,9 @@ metadata:
     app: headroom
 spec:
   replicas: 1
+  # RollingUpdate risks two headroom processes sharing one workspace.
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
+    type: Recreate
   selector:
     matchLabels:
       app: headroom
@@ -23,29 +21,14 @@ spec:
       securityContext:
         fsGroup: 1000
         fsGroupChangePolicy: OnRootMismatch
-      initContainers:
-        # Install [code] fresh per restart (no registry yet)
-        - name: install-code-extra
-          image: ghcr.io/headroomlabs-ai/headroom:main-nonroot
-          securityContext:
-            runAsNonRoot: true
-            runAsUser: 1000
-            allowPrivilegeEscalation: false
-            capabilities:
-              drop:
-                - ALL
-            seccompProfile:
-              type: RuntimeDefault
-          # Install into a venv layered on the image's packages.
-          # To ensure correct resolution and avoid shadowing via PYTHONPATH.
-          command: ["sh", "-c", "python -m venv --system-site-packages /packages/venv && /packages/venv/bin/pip install --no-cache-dir headroom-ai[code]"]
-          volumeMounts:
-            - name: code-extra
-              mountPath: /packages
+        runAsNonRoot: true
+        runAsUser: 1000
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: headroom
-          image: ghcr.io/headroomlabs-ai/headroom:main-nonroot
-          imagePullPolicy: Always
+          image: ghcr.io/headroomlabs-ai/headroom:main-code-nonroot@sha256:28dd23b6d64805e6b8da6dcb4e19ceedf989acee8cab5270ae2b3a9f01eaa0f0
+          imagePullPolicy: IfNotPresent
           args:
             - --host
             - 0.0.0.0
@@ -59,10 +42,13 @@ spec:
               value: /state/.headroom
             - name: HF_HOME
               value: /state/hf-cache
-            - name: PYTHONPATH
-              value: /packages/venv/lib/python3.13/site-packages
+            # Sterring is siabled. Nothing is shaped or written to
+            # output_svings.json. Kept in case mode ever changes.
             - name: HEADROOM_OUTPUT_SHAPER
               value: "1"
+            # Anonymous usage beacon opted out.
+            - name: HEADROOM_BEACON
+              value: "off"
             - name: ORT_DISABLE_TELEMETRY
               value: "1"
           ports:
@@ -72,8 +58,6 @@ spec:
           volumeMounts:
             - name: state
               mountPath: /state
-            - name: code-extra
-              mountPath: /packages
           livenessProbe:
             httpGet:
               path: /health
@@ -101,9 +85,7 @@ spec:
               # 1500m and 2x2000m replicas still showed between 5 to 23%
               # of periods throttled.
               #
-              # Single replica now - for now the most in the node.
-              # TODO: Now performance monitored in grafana - check in the
-              # cadvisor graphs whether we can maybe decrease this.
+              # 3000m works fine for the CM4.
               cpu: 3000m
               # OOMs happened almost always after ~4 minutes after startup.
               # HF cache and model load are suspected causes, since it happened
@@ -121,5 +103,3 @@ spec:
         - name: state
           persistentVolumeClaim:
             claimName: headroom-state
-        - name: code-extra
-          emptyDir: {}

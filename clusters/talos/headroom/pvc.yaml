@@ -11,4 +11,4 @@ spec:
   storageClassName: local-path
   resources:
     requests:
-      storage: 2Gi  # ~1.2Gi HF cache, ~0.5Gi workspace, ~0.3Gi headroom
+      storage: 10Gi
