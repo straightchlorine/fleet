@@ -1,0 +1,4 @@
+# Machine-config patch - use talosctl patch mc
+machine:
+  install:
+    disk: /dev/mmcblk0
