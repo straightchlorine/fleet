@@ -504,6 +504,8 @@ data:
         return 200 "ok\n";
       }
 
+      client_max_body_size 50G;
+
       location / {
         proxy_pass http://192.168.50.51:2283;
         proxy_http_version 1.1;
