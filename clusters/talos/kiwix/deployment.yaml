@@ -18,20 +18,55 @@ spec:
         app: kiwix
     spec:
       containers:
+        # Mounts the NAS share into the shared nas volume when the NAS is up.
+        # Otherwise retries quietly in the background while kiwix serves local
+        # zims only.
+        - name: nas-mounter
+          image: docker.io/library/alpine:3.20
+          securityContext:
+            privileged: true
+          command:
+            - /bin/sh
+            - -c
+            - |
+              apk add --no-cache nfs-utils
+              while :; do
+                if mount -t nfs -o ro,vers=4.2,soft,timeo=50,retry=0,proto=tcp \
+                    truenas.codex.home.arpa:/mnt/tank/kiwix /mnt/nas; then
+                  echo "NAS mounted"
+                  break
+                fi
+                sleep 60
+              done
+              sleep infinity
+          volumeMounts:
+            - name: nas
+              mountPath: /mnt/nas
+              mountPropagation: Bidirectional
         - name: kiwix-serve
           image: ghcr.io/kiwix/kiwix-serve:3.7.0-2
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:
-            - exec kiwix-serve --port=8080 $(find /data/nas /data/local -maxdepth 1 -iname '*.zim' 2>/dev/null)
+            # Wait for the sidecar's mount. If NAS is down the volume stays empty.
+            # (local zims only)
+            - |
+              i=0
+              while ! grep -q nfs /proc/mounts && [ $i -lt 30 ]; do
+                sleep 1
+                i=$((i+1))
+              done
+              exec kiwix-serve --port=8080 $(find /data/nas /data/local -maxdepth 1 -iname '*.zim' 2>/dev/null)
           ports:
             - name: http
               containerPort: 8080
               protocol: TCP
           volumeMounts:
-            - name: zim-nas
+            # no readOnly here: the propagated NFS mount must attach cleanly, and the
+            # sidecar mounts the share ro anyway (see its mount options)
+            - name: nas
               mountPath: /data/nas
-              readOnly: true
+              mountPropagation: HostToContainer
             - name: zim-local
               mountPath: /data/local
               readOnly: true
@@ -66,10 +101,8 @@ spec:
               drop:
                 - ALL
       volumes:
-        - name: zim-nas
-          nfs:
-            server: nas-pascal
-            path: /mnt/tank/kiwix
+        - name: nas
+          emptyDir: {}
         - name: zim-local
           persistentVolumeClaim:
             claimName: kiwix-local-zim

@@ -2,3 +2,7 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: kiwix
+  labels:
+    # The nas-mounter sidecar needs CAP_SYS_ADMIN to mount the share.
+    # Exemption, since PodSecurity forbids it.
+    pod-security.kubernetes.io/enforce: privileged
