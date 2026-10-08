@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: gatus
-          image: twinproduction/gatus:v5.16.0
+          image: twinproduction/gatus:v5.37.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
