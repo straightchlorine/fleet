@@ -23,6 +23,7 @@ Personal GitOps repo for my Kubernetes clusters.
 | Blog | [piotrkrzysztof.dev](https://piotrkrzysztof.dev) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_blog/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_blog/uptimes/24h/badge.svg) |
 | Honeywatch Dashboard | [honey.piotrkrzysztof.dev](https://honey.piotrkrzysztof.dev) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-dashboard/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-dashboard/uptimes/24h/badge.svg) |
 | Honeywatch API | [honey.piotrkrzysztof.dev/api](https://honey.piotrkrzysztof.dev/api/stats) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-api/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-api/uptimes/24h/badge.svg) |
+| c-pi.org Status | [status.c-pi.org](https://status.c-pi.org) | ![](https://status.c-pi.org/api/v1/endpoints/historia_c-pi-org/health/badge.svg) | ![](https://status.c-pi.org/api/v1/endpoints/historia_c-pi-org/uptimes/24h/badge.svg) |
 
 
 ## Structure

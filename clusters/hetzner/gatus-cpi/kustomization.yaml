@@ -1,0 +1,30 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Rewrite the base resources (which are hardcoded to the `gatus` namespace)
+# into this instance's own namespace.
+namespace: gatus-cpi
+
+resources:
+  - ../../../base/gatus
+  - namespace.yaml
+  - configmap.yaml
+  - ingress.yaml
+
+patches:
+  # k3s lacks network storage; use node-local provisioner
+  - target:
+      kind: PersistentVolumeClaim
+      name: gatus-data
+    patch: |-
+      - op: add
+        path: /spec/storageClassName
+        value: local-path
+  # Public instance: no basic-auth/OIDC and no alerting, so drop the
+  # secret-backed environment variables from the base Deployment.
+  - target:
+      kind: Deployment
+      name: gatus
+    patch: |-
+      - op: remove
+        path: /spec/template/spec/containers/0/env
