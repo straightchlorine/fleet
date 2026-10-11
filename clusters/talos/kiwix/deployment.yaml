@@ -29,6 +29,9 @@ spec:
             - /bin/sh
             - -c
             - |
+              # Bidirectional puts the mount on the node; left there, the kubelet
+              # cannot remove the emptyDir and the pod hangs in Terminating.
+              trap 'umount -l /mnt/nas 2>/dev/null; exit 0' TERM INT
               apk add --no-cache nfs-utils
               while :; do
                 if mount -t nfs -o ro,vers=4.2,soft,timeo=50,retry=0,proto=tcp \
@@ -36,9 +39,10 @@ spec:
                   echo "NAS mounted"
                   break
                 fi
-                sleep 60
+                sleep 60 & wait $!
               done
-              sleep infinity
+              # sleep in the background: sh runs the trap only between commands
+              sleep infinity & wait $!
           volumeMounts:
             - name: nas
               mountPath: /mnt/nas
