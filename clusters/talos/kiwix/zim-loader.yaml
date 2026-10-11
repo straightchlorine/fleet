@@ -1,0 +1,31 @@
+# Temporary pod with both zim mounts writable; the kiwix Deployment mounts the
+# local PVC read-only.
+#
+# Not in kustomization.yaml: zim-fetch.sh creates it and `zim-fetch cleanup`
+# deletes it. See machine-config/README.md.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: zim-loader
+  namespace: kiwix
+  labels:
+    app: zim-loader
+spec:
+  restartPolicy: Never
+  containers:
+    - name: zim-loader
+      image: docker.io/library/busybox:1.37
+      command: ["sleep", "infinity"]
+      volumeMounts:
+        - name: zim-local
+          mountPath: /local
+        - name: zim-nas
+          mountPath: /nas
+  volumes:
+    - name: zim-local
+      persistentVolumeClaim:
+        claimName: kiwix-local-zim
+    - name: zim-nas
+      nfs:
+        server: truenas.codex.home.arpa
+        path: /mnt/tank/kiwix

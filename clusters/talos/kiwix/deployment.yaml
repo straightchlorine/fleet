@@ -48,15 +48,30 @@ spec:
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh", "-c"]
           args:
-            # Wait for the sidecar's mount. If NAS is down the volume stays empty.
-            # (local zims only)
+            # Serves a library.xml rebuilt whenever the zim list on either mount
+            # changes; --monitorLibrary reloads it. NAS coming back or a new
+            # zim-fetch file shows up within ~60s, no pod restart.
             - |
-              i=0
-              while ! grep -q nfs /proc/mounts && [ $i -lt 30 ]; do
-                sleep 1
-                i=$((i+1))
-              done
-              exec kiwix-serve --port=8080 $(find /data/nas /data/local -maxdepth 1 -iname '*.zim' 2>/dev/null)
+              lib=/tmp/library.xml
+              # A zim on both mounts is one book; the last one added wins, so local goes last.
+              zims() { for d in /data/nas /data/local; do find "$d" -maxdepth 1 -iname '*.zim' 2>/dev/null | sort; done; }
+              build() {
+                rm -f "$lib.new"
+                for z in $1; do kiwix-manage "$lib.new" add "$z"; done
+                # kiwix-serve refuses a missing library file; start empty instead
+                [ -f "$lib.new" ] || echo '<library version="20110515"/>' > "$lib.new"
+                mv "$lib.new" "$lib"
+              }
+              seen=$(zims); build "$seen"
+              (
+                while sleep 60; do
+                  now=$(zims)
+                  [ "$now" = "$seen" ] && continue
+                  echo "zim list changed, rebuilding library"
+                  build "$now"; seen=$now
+                done
+              ) &
+              exec kiwix-serve --port=8080 --monitorLibrary --library "$lib"
           ports:
             - name: http
               containerPort: 8080
