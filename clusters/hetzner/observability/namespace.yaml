@@ -4,3 +4,6 @@ metadata:
   name: observability
   labels:
     name: observability
+    # Required by the node-exporter DaemonSet (node-exporter-daemonset.yaml):
+    # Similar to base/alloy mount.
+    pod-security.kubernetes.io/enforce: privileged

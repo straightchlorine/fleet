@@ -1,0 +1,26 @@
+# Telemetry for the OCI rke2 cluster: Alloy to Hetzner Loki, and the host metrics
+# to the Hetzner Prometheus, both over the tailnet.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: oci-observability
+  namespace: argocd
+spec:
+  project: oci
+  source:
+    repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
+    path: clusters/oci/observability
+    targetRevision: master
+  destination:
+    name: oci
+    namespace: observability
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m

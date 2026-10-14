@@ -1,0 +1,154 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alloy-config
+  namespace: observability
+  labels:
+    app: alloy
+data:
+  config.alloy: |
+    // Host and cluster telemetry for the OCI rke2 node, pushed to the Hetzner
+    // observability stack over the tailnet.
+
+    // --- Journal: the rke2 node's own logs ---
+    loki.source.journal "host" {
+      forward_to    = [loki.process.journal.receiver]
+      labels        = { job = "systemd-journal", host = sys.env("NODE_NAME"), cluster = "oci" }
+      // Only replay the recent past on restart;
+      max_age       = "12h"
+      relabel_rules = discovery.relabel.journal.rules
+    }
+
+    discovery.relabel "journal" {
+      targets = []
+
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        target_label  = "unit"
+      }
+      rule {
+        source_labels = ["__journal_priority_keyword"]
+        target_label  = "level"
+      }
+      // Keep only the units worth paying ingest for. rke2 embeds kubelet and
+      // containerd - their output arrives under the rke2-server unit.
+      rule {
+        source_labels = ["__journal__systemd_unit"]
+        regex         = "sshd\\.service|rke2-server\\.service|rke2-agent\\.service|containerd\\.service|tailscaled\\.service|cron\\.service|systemd-networkd\\.service"
+        action        = "keep"
+      }
+    }
+
+    loki.process "journal" {
+      forward_to = [loki.write.fleet.receiver]
+
+      stage.drop {
+        expression = "^\\s*$"
+      }
+    }
+    // --- Pod logs: everything the kubelet writes ---
+    // Static glob, since the layout is fixed by the kubelet:
+    // /var/log/pods/<namespace>_<pod>_<uid>/<container>/<n>.log
+    // namespace/pod/container come out of the path.
+    local.file_match "pods" {
+      path_targets = [{ __path__ = "/var/log/pods/*/*/*.log" }]
+      sync_period  = "10s"
+    }
+
+    discovery.relabel "pods" {
+      targets = local.file_match.pods.targets
+
+      rule {
+        source_labels = ["__path__"]
+        regex         = "^/var/log/pods/([^_]+)_([^_]+)_[^/]+/([^/]+)/.*\\.log$"
+        target_label  = "namespace"
+        replacement   = "$1"
+      }
+      rule {
+        source_labels = ["__path__"]
+        regex         = "^/var/log/pods/([^_]+)_([^_]+)_[^/]+/([^/]+)/.*\\.log$"
+        target_label  = "pod"
+        replacement   = "$2"
+      }
+      rule {
+        source_labels = ["__path__"]
+        regex         = "^/var/log/pods/([^_]+)_([^_]+)_[^/]+/([^/]+)/.*\\.log$"
+        target_label  = "container"
+        replacement   = "$3"
+      }
+      rule {
+        target_label = "cluster"
+        replacement  = "oci"
+      }
+    }
+
+    loki.source.file "pods" {
+      targets    = discovery.relabel.pods.output
+      forward_to = [loki.process.pods.receiver]
+      // positions live only for the life of the pod
+      tail_from_end = true
+    }
+
+    loki.process "pods" {
+      forward_to = [loki.write.fleet.receiver]
+
+      // CRI (containerd) log format; the kubelet writes it for every container.
+      stage.cri {}
+      stage.labels {
+        values = { stream = "" }
+      }
+      stage.drop {
+        expression = "^\\s*$"
+      }
+    }
+
+    // --- Sinks: the Hetzner node's tailnet address ---
+    // 100.64.0.25 is the peer cluster.
+    loki.write "fleet" {
+      endpoint {
+        url = "http://100.64.0.25:30310/loki/api/v1/push"
+      }
+    }
+
+    prometheus.remote_write "fleet" {
+      endpoint {
+        url = "http://100.64.0.25:30090/api/v1/write"
+      }
+    }
+
+    // --- Host metrics -> the Hetzner Prometheus ---
+    prometheus.exporter.unix "host" {
+      // The DaemonSet mounts the host's /proc, /sys and / at /host/*;
+      procfs_path = "/host/proc"
+      sysfs_path  = "/host/sys"
+      rootfs_path = "/host/root"
+
+      // The systemd collector is left out: it needs the host's D-Bus socket or
+      // /run/systemd, which this pod does not mount.
+      enable_collectors = ["cpu", "diskstats", "filesystem", "loadavg", "meminfo", "netdev", "uname"]
+
+      filesystem {
+        mount_points_exclude = "^/(dev|proc|sys|host/.+)($|/)"
+      }
+    }
+
+    // The exporter labels every series with the hostname of the Alloy process,
+    // which inside a DaemonSet pod is the pod name.
+    discovery.relabel "metrics" {
+      targets = prometheus.exporter.unix.host.targets
+
+      rule {
+        target_label = "instance"
+        replacement  = sys.env("NODE_NAME")
+      }
+      rule {
+        target_label = "cluster"
+        replacement  = "oci"
+      }
+    }
+
+    prometheus.scrape "host" {
+      targets         = discovery.relabel.metrics.output
+      forward_to      = [prometheus.remote_write.fleet.receiver]
+      scrape_interval = "60s"
+    }

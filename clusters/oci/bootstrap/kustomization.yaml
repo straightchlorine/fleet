@@ -1,9 +1,15 @@
 # One-shot bootstrap applied manually via kubectl; see docs/oci-bootstrap.md
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
-
 resources:
   - argocd-manager.yaml
+  # - wke-namespace.yaml
+  # - woodpecker-namespace.yaml
+  # - wke-argocd-rbac.yaml
+  - observability-namespace.yaml
+  - observability-argocd-rbac.yaml
+  - argocd-manager-token.yaml
+  - https://github.com/cert-manager/cert-manager/releases/download/v1.21.1/cert-manager.yaml
   # sealed-secrets: independent keypair per cluster, version-matched with base/sealed-secrets
   - https://github.com/bitnami-labs/sealed-secrets/releases/download/v0.27.3/controller.yaml
   # local-path-provisioner: rke2 ships no default StorageClass; this repo's PVCs assume `local-path`

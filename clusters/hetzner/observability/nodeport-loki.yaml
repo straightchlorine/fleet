@@ -1,0 +1,23 @@
+# NodePort exposure of the Loki push path so the OCI rke2 host can ship journal
+# and pod logs over the tailnet.
+#
+# externalTrafficPolicy: Local is important. It keeps the tailnet source address
+# intact instead of SNAT-ing it to the node address.
+apiVersion: v1
+kind: Service
+metadata:
+  name: loki-tailnet
+  namespace: observability
+  labels:
+    app: loki
+spec:
+  type: NodePort
+  externalTrafficPolicy: Local
+  selector:
+    app: loki
+  ports:
+    - name: http
+      port: 3100
+      targetPort: 3100
+      nodePort: 30310
+      protocol: TCP

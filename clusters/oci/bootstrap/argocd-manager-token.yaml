@@ -1,0 +1,9 @@
+# Long-lived token: `kubectl create token` expires and ArgoCD's cluster.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: argocd-manager-token
+  namespace: kube-system
+  annotations:
+    kubernetes.io/service-account.name: argocd-manager
+type: kubernetes.io/service-account-token

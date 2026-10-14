@@ -18,6 +18,21 @@ data:
         static_configs:
           - targets: ["localhost:9090"]
 
+      # The node Prometheus itself runs on (node-exporter-daemonset.yaml):
+      # in-cluster pull over the Service, no tailnet and no agent involved.
+      - job_name: node-exporter
+        static_configs:
+          - targets: ["node-exporter.observability.svc.cluster.local:9100"]
+            labels:
+              cluster: hetzner
+        metric_relabel_configs:
+          - target_label: instance
+            replacement: debian-k3s
+          - source_labels: [__name__]
+            regex: node_uname_info
+            target_label: nodename
+            replacement: debian-k3s
+
       # Opt-in pod scraping: a pod is only scraped if it asks to be, with
       # prometheus.io/scrape: "true" (and optionally prometheus.io/port and
       # prometheus.io/path). Nothing is collected by default.

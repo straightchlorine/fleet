@@ -1,0 +1,11 @@
+# Telemetry namespace for the OCI rke2 cluster:
+# - the Alloy DaemonSet journal and host metrics to the Hetzner stack over the tailnet.
+#
+# Applied by the one-shot bootstrap (`kubectl apply -k clusters/oci/bootstrap`).
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: observability
+  labels:
+    name: observability
+    pod-security.kubernetes.io/enforce: privileged
