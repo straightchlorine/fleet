@@ -26,6 +26,11 @@ spec:
         runAsUser: 0
         runAsGroup: 0
         fsGroup: 0
+        # SELinux (Rocky) refuses container_t access to the host's var_log_t and
+        # init_t files, so the journal, pod-log and /proc reads all fail EACCES.
+        # spc_t is the type privileged pods get; this namespace is privileged.
+        seLinuxOptions:
+          type: spc_t
       containers:
         - name: alloy
           image: grafana/alloy:v1.5.1

@@ -147,8 +147,24 @@ data:
       }
     }
 
+    // node_uname_info carries the UTS hostname of the Alloy process, which
+    // kubelet sets to the pod name - measured on the Hetzner cluster with a
+    // hostNetwork pod, so this is not a pod-name-vs-hostNetwork question. The
+    // honeypot's series read nodename=<hostname>, so pin it here too or the
+    // dashboard's "Nodename" variable shows alloy-7f9c... for this host alone.
+    prometheus.relabel "host" {
+      forward_to = [prometheus.remote_write.fleet.receiver]
+
+      rule {
+        source_labels = ["__name__"]
+        regex         = "node_uname_info"
+        target_label  = "nodename"
+        replacement   = sys.env("NODE_NAME")
+      }
+    }
+
     prometheus.scrape "host" {
       targets         = discovery.relabel.metrics.output
-      forward_to      = [prometheus.remote_write.fleet.receiver]
+      forward_to      = [prometheus.relabel.host.receiver]
       scrape_interval = "60s"
     }
