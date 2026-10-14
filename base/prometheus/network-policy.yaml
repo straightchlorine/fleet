@@ -31,6 +31,23 @@ spec:
       ports:
         - protocol: TCP
           port: 9090
+    # Remote-write over the tailnet from the OCI host.
+    # (from hetzner/.../nodeport-prometheus.yaml -> ACL tag:cluster-oci -> :30090)
+    #
+    # NOTE: Service uses externalTrafficPolicy: Local, so the source address
+    # survives the NodePort hop. CIDR match ensures those calls are only from
+    # within the tailnet.
+    #
+    # Prometheus takes any series it is handed (--web.enable-remote-write-receiver)
+    # and this path carries no basic auth, so this rule is what keeps a public
+    # client off the NodePort. NOTE: for now ipv6 is not used by any peers thus
+    # not yet considered.
+    - from:
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 9090
     # Health checks from gatus
     - from:
         - namespaceSelector:
@@ -64,7 +81,11 @@ spec:
       ports:
         - protocol: TCP
           port: 6443
-    # Scraping annotated pods: the port is per-target, so it cannot be
-    # enumerated here. Scoped to in-cluster destinations only.
+    # Scraping annotated pods:
+    # the port is per-target, so it cannot be enumerated here.
+    #
+    # Scoped to in-cluster destinations only, which also covers
+    # the node-exporter DaemonSet in `observability` - it is not
+    # hostNetwork, so the scrape is pod-to-pod traffic.
     - to:
         - namespaceSelector: {}

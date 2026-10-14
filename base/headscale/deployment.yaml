@@ -6,9 +6,9 @@ metadata:
   labels:
     app: headscale
 spec:
-  replicas: 1  # SQLite on RWO: a second replica splits map-poll state
+  replicas: 1 # SQLite on RWO: a second replica splits map-poll state
   strategy:
-    type: Recreate  # RWO PVC: old pod must release it before the new one mounts
+    type: Recreate # RWO PVC: old pod must release it before the new one mounts
   selector:
     matchLabels:
       app: headscale
@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: headscale
-          image: headscale/headscale:0.29.4
+          image: headscale/headscale:0.29.5
           imagePullPolicy: IfNotPresent
           command:
             - headscale

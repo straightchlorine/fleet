@@ -42,6 +42,8 @@ spec:
           volumeMounts:
             - name: data
               mountPath: /prometheus
+            # Prometheus reads its config only at startup. Remember to restart
+            # after deploy.
             - name: config
               mountPath: /etc/prometheus/prometheus.yml
               subPath: prometheus.yml

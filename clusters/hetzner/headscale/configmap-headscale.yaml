@@ -37,22 +37,20 @@ data:
       magic_dns: true
       base_domain: codex.internal
       override_local_dns: false
+
       # Both zones are authoritative on the OPNsense Unbound, reachable at its
-      # tailnet address - so tailnet and LAN clients resolve identically and
-      # records are maintained in one place instead of duplicated here.
+      # tailnet address, so a tailnet client resolves them the same way a LAN
+      # client does (the LAN client just reaches that same Unbound through its
+      # own resolvers). Only tailnet clients receive this block - MagicDNS hands
+      # it to them; LAN clients never see it.
       nameservers:
         split:
           internal.codextechnologies.org:
+          # - 192.168.20.10 if pihole would be preferred
             - 100.64.0.4
           codex.home.arpa:
+          # - 192.168.20.10 if pihole would be preferred
             - 100.64.0.4
-          # get the dns in order later
-          # internal.codextechnologies.org:
-          #   - 192.168.20.10
-          #   - 100.64.0.4
-          # codex.home.arpa:
-          #   - 192.168.20.10
-          #   - 100.64.0.4
 
     policy:
       mode: file
@@ -124,6 +122,30 @@ data:
           "action": "accept",
           "src": ["tag:cluster-hetzner"],
           "dst": ["tag:cluster-oci:6443"],
+        },
+
+        // Woodpecker OCI arm64 agent reaches the Hetzner gRPC NodePort.
+        {
+          "action": "accept",
+          "src": ["tag:cluster-oci"],
+          "dst": ["tag:cluster-hetzner:30900"],
+        },
+
+        // OCI host metrics reach the Hetzner observability stack.
+        // Prometheus remote-write and the Loki push path.
+        // (nodeport-prometheus.yaml and nodeport-loki.yaml)
+        //
+        // No credentials on either path. This ACL and the ingress rules
+        // (network-policy.yaml on both sides) are the gate.
+        {
+          "action": "accept",
+          "src": ["tag:cluster-oci"],
+          "dst": ["tag:cluster-hetzner:30090"],
+        },
+        {
+          "action": "accept",
+          "src": ["tag:cluster-oci"],
+          "dst": ["tag:cluster-hetzner:30310"],
         },
 
         // cpi mesh network.

@@ -31,6 +31,26 @@ spec:
       ports:
         - protocol: TCP
           port: 3100
+    # Push over the tailnet from the OCI host.
+    # (from hetzner/.../nodeport-loki.yaml -> ACL tag:cluster-oci -> :30310)
+    #
+    # NOTE: Service uses externalTrafficPolicy: Local, so the source address
+    # survives the NodePort hop. CIDR match ensures those calls are only from
+    # within the tailnet.
+    #
+    # Since for now Loki has auth disabled (auth_enabled: false), this rule is
+    # what keeps a public client off the NodePort. NOTE: for now ipv6 is not
+    # used by any peers thus not yet considered.
+    #
+    # Since NodePort is open on every interface of the node, then the public one
+    # is included. Without it a public client reaches the port exactly like tailnet
+    # peer does.
+    - from:
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 3100
     # Query from Grafana
     - from:
         - podSelector:
