@@ -22,6 +22,12 @@ spec:
       labels:
         app: alloy
     spec:
+      # hostNetwork on purpose: the node's pod egress is broken (firewalld drops
+      # forwarded traffic on this rke2/Rocky node), while the host's own egress
+      # works. It also makes /proc the host's, so the node collectors read real
+      # data instead of the pod's namespaces.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       securityContext:
         runAsUser: 0
         runAsGroup: 0
@@ -58,12 +64,21 @@ spec:
               mountPath: /etc/alloy/config.alloy
               subPath: config.alloy
               readOnly: true
+            # Writable scratch for positions + the remote_write WAL, so the
+            # container's own root filesystem can stay read-only.
+            - name: storage
+              mountPath: /tmp
             - name: journal
               mountPath: /var/log/journal
               readOnly: true
             # The journal reader derives the machine directory from this file.
             - name: machine-id
               mountPath: /etc/machine-id
+              readOnly: true
+            # Volatile journals live here; the reader uses /var/log/journal and
+            # /run/log/journal when no path is set, and this node is volatile.
+            - name: run-journal
+              mountPath: /run/log/journal
               readOnly: true
             - name: pod-logs
               mountPath: /var/log/pods
@@ -103,7 +118,7 @@ spec:
               memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            readOnlyRootFilesystem: true
             runAsUser: 0
             capabilities:
               drop:
@@ -112,9 +127,15 @@ spec:
         - name: config
           configMap:
             name: alloy-config
+        - name: storage
+          emptyDir: {}
         - name: journal
           hostPath:
             path: /var/log/journal
+            type: DirectoryOrCreate
+        - name: run-journal
+          hostPath:
+            path: /run/log/journal
             type: DirectoryOrCreate
         - name: machine-id
           hostPath:

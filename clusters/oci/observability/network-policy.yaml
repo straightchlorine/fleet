@@ -13,6 +13,10 @@ spec:
     - Ingress
     - Egress
   # Nothing in this cluster talks to Alloy; its UI and probe port stay on the pod.
+  # NOTE: the agent runs hostNetwork, and Calico does not police host-network
+  # traffic, so this policy no longer gates the agent's own pushes. It is kept for
+  # the day the agent moves back into the pod network; the live gates are the
+  # headscale ACL and the node firewall.
   ingress: []
   egress:
     # DNS - pointing an endpoint at a name later won't fail in a way that might
