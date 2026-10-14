@@ -155,12 +155,23 @@ data:
           "dst": ["group:cpi:*"],
         },
 
+        // cpi nodes resolve the internal zones on the OPNsense Unbound.
+        //
+        // NOTE: it's resolution, not names - services (once ready) still need to
+        // be appended to a rule below.
+        {
+          "action": "accept",
+          "src": ["group:cpi"],
+          "dst": ["100.64.0.4:53"],
+        },
+
         // cpi -> headroom NodePort 30878 via router's 192.168.20.0/24.
         {
           "action": "accept",
           "src": ["group:cpi"],
           "dst": ["192.168.20.30:30878"],
         },
+
       ],
 
       // Auto-approve subnet routes advertised by the home router.
