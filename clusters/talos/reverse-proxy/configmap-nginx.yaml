@@ -495,6 +495,80 @@ data:
         proxy_read_timeout 86400s;
       }
     }
+  garage.conf: |
+    # Garage web UI (TrueNAS app, port 30186).
+    # The S3 API (3901) is reached directly on the LAN by the pipeline hosts,
+    # not through this proxy.
+    server {
+      listen 8443 ssl;
+      server_name garage.internal.codextechnologies.org;
+
+      ssl_certificate /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+      ssl_protocols TLSv1.2 TLSv1.3;
+      ssl_ciphers HIGH:!aNULL:!MD5;
+      # Resolved per request through CoreDNS: a static name in proxy_pass is
+      # resolved once at startup and would stop nginx from starting if the NAS is down.
+      resolver 10.96.0.10 valid=30s;
+
+      location = /nginx-health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+      }
+
+      # The UI can upload objects from the browser.
+      client_max_body_size 1G;
+
+      location / {
+        set $upstream_garage truenas.codex.home.arpa;
+        proxy_pass http://$upstream_garage:30186;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_request_buffering off;
+      }
+    }
+  syncthing.conf: |
+    # Syncthing GUI (TrueNAS app, port 8384).
+    # The GUI listens on plain HTTP; its own GUI user/password gates it.
+    # The sync protocol (22000) is not proxied.
+    server {
+      listen 8443 ssl;
+      server_name syncthing.internal.codextechnologies.org;
+
+      ssl_certificate /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+      ssl_protocols TLSv1.2 TLSv1.3;
+      ssl_ciphers HIGH:!aNULL:!MD5;
+      # Resolved per request through CoreDNS: a static name in proxy_pass is
+      # resolved once at startup and would stop nginx from starting if the NAS is down.
+      resolver 10.96.0.10 valid=30s;
+
+      location = /nginx-health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+      }
+
+      location / {
+        set $upstream_syncthing truenas.codex.home.arpa;
+        proxy_pass http://$upstream_syncthing:8384;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # The GUI long-polls /rest/events; keep the upstream open.
+        proxy_read_timeout 600s;
+      }
+    }
   immich.conf: |
     map $http_upgrade $connection_upgrade_immich {
       default upgrade;
@@ -785,5 +859,43 @@ data:
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
+      }
+    }
+  office.conf: |
+    # Euro-Office document server (OnlyOffice fork). Editing sessions run over websockets.
+    map $http_upgrade $connection_upgrade_office {
+      default upgrade;
+      ''      close;
+    }
+    server {
+      listen 8443 ssl;
+      server_name office.internal.codextechnologies.org;
+
+      ssl_certificate /etc/nginx/certs/tls.crt;
+      ssl_certificate_key /etc/nginx/certs/tls.key;
+      ssl_session_cache shared:SSL:10m;
+      ssl_session_timeout 10m;
+      ssl_protocols TLSv1.2 TLSv1.3;
+      ssl_ciphers HIGH:!aNULL:!MD5;
+
+      location = /nginx-health {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+      }
+
+      # Documents are uploaded to the server for conversion.
+      client_max_body_size 100M;
+
+      location / {
+        proxy_pass http://192.168.20.11:8010;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade_office;
+        proxy_read_timeout 3600s;
       }
     }
