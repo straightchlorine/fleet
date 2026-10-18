@@ -60,20 +60,27 @@ spec:
             - name: data
               mountPath: /var/lib/postgresql/data
           resources:
+            # 250m sat right at the limit and throttled hard: pg_isready probes
+            # timed out and checkpoints took ~23s for a handful of buffers.
+            # Kept modest on purpose - headroom is this box's primary consumer,
+            # so one core is the ceiling, not multiple.
             requests:
               cpu: 100m
-              memory: 128Mi
+              memory: 256Mi
             limits:
-              cpu: 250m
+              cpu: 1000m
               memory: 512Mi
           livenessProbe:
             exec:
-              command: ["pg_isready", "-U", "infisical"]
+              # -d matters: pg_isready with no -d connects to a database named
+              # after the user ("infisical"), which does not exist, so the server
+              # logged "database \"infisical\" does not exist" every 5s.
+              command: ["pg_isready", "-U", "infisical", "-d", "infisicalDB"]
             initialDelaySeconds: 30
             periodSeconds: 10
           readinessProbe:
             exec:
-              command: ["pg_isready", "-U", "infisical"]
+              command: ["pg_isready", "-U", "infisical", "-d", "infisicalDB"]
             initialDelaySeconds: 5
             periodSeconds: 5
           securityContext:
@@ -92,4 +99,4 @@ spec:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 5Gi
+            storage: 20Gi

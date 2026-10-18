@@ -54,6 +54,10 @@ spec:
                 secretKeyRef:
                   name: infisical-redis-uri
                   key: uri
+            # Enabled by default in the image, and this cluster has no egress,
+            # so every flush was retrying against a refused PostHog connection.
+            - name: TELEMETRY_ENABLED
+              value: "false"
           startupProbe:
             httpGet:
               path: /api/status
@@ -71,12 +75,14 @@ spec:
               port: http
             periodSeconds: 10
           resources:
+            # Settled ~780-880Mi against the old 1000Mi ceiling - too close, an
+            # OOMKill was plausible. Node leaves ~3.5Gi free; give it room.
             requests:
               cpu: 350m
-              memory: 256Mi
+              memory: 512Mi
             limits:
               cpu: 1000m
-              memory: 1000Mi
+              memory: 1536Mi
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
