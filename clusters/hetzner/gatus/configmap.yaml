@@ -247,33 +247,6 @@ data:
         ui:
           hide-url: true
 
-      - name: WKE
-        group: external
-        url: https://wke.piotrkrzysztof.dev/
-        interval: 120s
-        conditions:
-          - "[STATUS] == 200"
-          - "[RESPONSE_TIME] < 5000"
-          - "[CERTIFICATE_EXPIRATION] > 240h"
-        alerts:
-          - type: ntfy
-
-      - name: WKE API Status
-        group: external
-        url: https://wke.piotrkrzysztof.dev/api/v1/status
-        interval: 120s
-        client:
-          timeout: 5s
-        conditions:
-          - "[STATUS] == 200"
-          - "[BODY].watcher_connected == true"
-          - "[BODY].redis == true"
-          - "[BODY].ml_ready == true"
-          # 36 h: one missed nightly 03:00 UTC run plus slack.
-          - "[BODY].trending_age_seconds < 129600"
-        alerts:
-          - type: ntfy
-
       - name: QP
         group: docs
         url: https://docs.qp.piotrkrzysztof.dev/
