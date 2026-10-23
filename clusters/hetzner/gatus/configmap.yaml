@@ -217,6 +217,22 @@ data:
         ui:
           hide-url: true
 
+      # Cache warmer for the folded sessions list.
+      - name: Honeywatch Sessions Warm
+        group: external
+        url: http://honeypot-api.honeywatch.svc.cluster.local:5000/api/v1/sessions/?fold=true&sort=recent&per_page=1
+        interval: 30s
+        client:
+          timeout: 25s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 2000"
+          - "[BODY].meta.total >= 0"
+        alerts:
+          - type: ntfy
+        ui:
+          hide-url: true
+
       - name: Honeywatch Dashboard
         group: external
         url: http://dashboard.honeywatch.svc.cluster.local/
