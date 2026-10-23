@@ -1,0 +1,30 @@
+# Registers honeywatch's own k8s/ manifests Image Updater resolves new semver
+# dashboard tags and writes the resolved tag back to k8s/kustomization.yaml
+# in the honeywatch repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: honeywatch
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: dashboard=ghcr.io/straightchlorine/honeywatch/dashboard
+    argocd-image-updater.argoproj.io/dashboard.update-strategy: semver
+    argocd-image-updater.argoproj.io/dashboard.allow-tags: "regexp:^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    argocd-image-updater.argoproj.io/write-back-method: git:secret:argocd/github-writeback
+    argocd-image-updater.argoproj.io/write-back-target: kustomization
+    argocd-image-updater.argoproj.io/git-branch: master
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/straightchlorine/honeywatch.git
+    path: k8s
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: honeywatch
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

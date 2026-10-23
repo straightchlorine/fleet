@@ -3,6 +3,9 @@ kind: Application
 metadata:
   name: hetzner-apps
   namespace: argocd
+  annotations:
+    # this file is inside the path it syncs, so the root manages itself
+    argocd.argoproj.io/sync-options: Prune=false
 spec:
   project: default
   source:
@@ -16,3 +19,11 @@ spec:
     automated:
       selfHeal: true
       prune: true
+    # failed auto-sync not retried for the same commit,
+    # later waves would wait for the next push.
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
