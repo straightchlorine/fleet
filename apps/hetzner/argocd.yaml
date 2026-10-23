@@ -3,6 +3,12 @@ kind: Application
 metadata:
   name: argocd-config
   namespace: argocd
+  annotations:
+    # Apps under oci-apps use the oci AppProject and cluster secret this creates.
+    # Image Updater mounts ssh-git-creds via subPath, which gets no Secret updates.
+    # So a key created after the pod started stays missing until a restart.
+    # Everything else stays in wave 0 final wave, so the sync does not wait for.
+    argocd.argoproj.io/sync-wave: "-3"
 spec:
   project: default
   source:
