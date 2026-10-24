@@ -4,7 +4,8 @@ kind: Kustomization
 resources:
   - argocd-manager.yaml
   # - wke-namespace.yaml
-  # - woodpecker-namespace.yaml
+  - woodpecker-namespace.yaml
+  - woodpecker-argocd-rbac.yaml
   # - wke-argocd-rbac.yaml
   - observability-namespace.yaml
   - observability-argocd-rbac.yaml

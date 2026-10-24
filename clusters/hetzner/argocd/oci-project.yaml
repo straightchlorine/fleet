@@ -12,8 +12,8 @@ spec:
   destinations:
     # - name: oci
     #   namespace: wke
-    # - name: oci
-    #   namespace: woodpecker
+    - name: oci
+      namespace: woodpecker
     # Telemetry agent for the OCI host
     - name: oci
       namespace: observability

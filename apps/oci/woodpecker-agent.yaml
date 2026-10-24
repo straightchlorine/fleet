@@ -1,0 +1,19 @@
+# Registers the OCI arm64 CI agent (ADR 0010).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: woodpecker-agent
+  namespace: argocd
+spec:
+  project: oci
+  source:
+    repoURL: https://codeberg.org/piotrkrzysztof/fleet.git
+    path: clusters/oci/woodpecker-agent
+    targetRevision: master
+  destination:
+    name: oci
+    namespace: woodpecker
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

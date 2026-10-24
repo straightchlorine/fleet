@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: woodpecker-agent-secret
+  namespace: woodpecker
+spec:
+  encryptedData:
+    agent-secret: AgAC8+6ORxQskqxv0TYMAYhx5GaZZiEx4rUDeJn72FXPjjB+jO28cbCs6y9YKnm3Y6SgbiDSA8cjKZ8P23GowMllqUUND82oJKy4bZkMc/ujTTc4qetXpy8mOpnCNhOPheY0HFKrwj4zg/jKwDe1LfBBEVzvmmEokYnb4q/008ABd02rUsFacr+zc7VfUHMkd4qcDOawetEM2zw5YD1AwLnXezE/xFsXvG/fVN/Pm3V3tvyby0P+2L5Yxzx02Tr/lypxBQ241LIcVT3/rTny+cju/CqbfqSD5k5JsT82PJRKIplphilPKnNYWgQRkQrXWOfHhTMu3xCSbOrWTLkbgZM9ktrPrEnhYXOuKr9uqM0AT24IpYhujN+h1k71ky+p8DLvSh+zylZEOs0mlEXL7gMFIy1dXbBHQQa5VRQaVqJrlf0SjrGquZQSBWZCZr6awj7q4aTyKhMkLltdKLy+yXGDTczAU8nm9Bwx4aFh+PX00XL7NzzGj7si82TMUzQTXdADCcOqzL6CnOQH5CcLpimKWcvSz1/QDwvuAFejBdt7gGdt9O0erUvLIxMZBBEl+00XgvckXPIoB9ktOFyAGxT4xe/VLoxXVSrJv4Mlkppw/2YB29HSr7xnVYxxZJC4Bg4e5+NuHc0JqIx+Wbpc8TlrozrG+4u+bibt5PiMbIyWHl9IHH5o6RkclsLiZJQQhz/XGggbEGyNGpmaLagNFwZ/VnIcNgru2dCrH3KdZitqnka0kAMYdXB0VbWTf69zU9MehGWIe49mTLulFFTVQn42
+  template:
+    metadata:
+      name: woodpecker-agent-secret
+      namespace: woodpecker

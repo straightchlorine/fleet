@@ -49,7 +49,7 @@ kubectl --context hetzner-debian -n kube-system get secret \
   -l sealedsecrets.bitnami.com/sealed-secrets-key -o yaml > main.key
 ```
 
-The controller adds a new key every 30 days. The reseal scripts seal with
+The controller adds a new key every 30 days. `scripts/seal.sh` seals with
 `.sealed-secrets-cert.pem` (from 2026-04-05), so any later backup decrypts what
 they produce; re-take it if you ever seal against the controller's current cert.
 

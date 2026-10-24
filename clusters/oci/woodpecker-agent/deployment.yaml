@@ -1,0 +1,59 @@
+# Native arm64 CI agent (ADR 0010), replacing the Hetzner QEMU fallback
+# once live. Runs in the privileged woodpecker namespace because
+# woodpeckerci/plugin-docker-buildx needs it.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: woodpecker-agent
+  namespace: woodpecker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: woodpecker-agent
+  template:
+    metadata:
+      labels:
+        app: woodpecker-agent
+    spec:
+      serviceAccountName: woodpecker-agent
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      containers:
+        - name: woodpecker-agent
+          image: woodpeckerci/woodpecker-agent:v3.18.1
+          env:
+            - name: WOODPECKER_BACKEND
+              value: kubernetes
+            - name: WOODPECKER_BACKEND_K8S_NAMESPACE
+              value: woodpecker
+            # Hetzner node's tailnet IP (ACL rule allows
+            # tag:cluster-oci -> tag:cluster-hetzner:30900).
+            - name: WOODPECKER_SERVER
+              value: "100.64.0.25:30900"
+            - name: WOODPECKER_AGENT_LABELS
+              value: platform=linux/arm64
+            # local-path-provisioner v0.0.27 is RWO-only and unmarked as
+            # default class; RWX default (true) leaves PVCs Pending.
+            - name: WOODPECKER_BACKEND_K8S_STORAGE_RWX
+              value: "false"
+            - name: WOODPECKER_BACKEND_K8S_STORAGE_CLASS
+              value: local-path
+            - name: WOODPECKER_AGENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: woodpecker-agent-secret
+                  key: agent-secret
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
