@@ -63,3 +63,25 @@ data:
             target_label: pod
           - source_labels: [__meta_kubernetes_pod_label_app]
             target_label: app
+
+      # Per-container memory, CPU and OOM kills from the kubelet's embedded
+      # cAdvisor (k3s and rke2 both ship it). Scraped straight from the kubelet
+      # with this pod's token, which only needs nodes/metrics; going through the
+      # API server's nodes/proxy would grant far more than reading metrics.
+      # Allowlisted: cAdvisor emits several hundred series per container.
+      - job_name: kubelet-cadvisor
+        scheme: https
+        metrics_path: /metrics/cadvisor
+        authorization:
+          credentials_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+        tls_config:
+          insecure_skip_verify: true # the kubelet serves a self-signed certificate
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_node_name]
+            target_label: instance
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: container_(memory_working_set_bytes|memory_rss|spec_memory_limit_bytes|cpu_usage_seconds_total|cpu_cfs_periods_total|cpu_cfs_throttled_periods_total|oom_events_total|memory_failcnt|network_receive_bytes_total|network_transmit_bytes_total)
+            action: keep

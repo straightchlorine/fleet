@@ -76,10 +76,11 @@ spec:
           resources:
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 256Mi
             limits:
               cpu: 300m
-              memory: 384Mi
+              # 13.x peaks near 400Mi while migrating the database; 384Mi was OOM-killed on first start
+              memory: 768Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: false

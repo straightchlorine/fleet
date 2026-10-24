@@ -81,6 +81,15 @@ spec:
       ports:
         - protocol: TCP
           port: 6443
+    # The kubelet's embedded cAdvisor (job kubelet-cadvisor). Like the API
+    # server above it is on the host network, so there is no selector to match;
+    # the port is the scope, which keeps the node's address out of the repo.
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+      ports:
+        - protocol: TCP
+          port: 10250
     # Scraping annotated pods:
     # the port is per-target, so it cannot be enumerated here.
     #
