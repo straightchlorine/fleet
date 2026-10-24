@@ -21,16 +21,16 @@ data:
       title: "c-pi · status"
       description: "Status serwisu c-pi.org — bieżąca dostępność i działanie."
       header: "c · pi"
-      logo: "https://c-pi.org/user/themes/quark/images/favicon.png"
+      logo: "https://c-pi.org/user/themes/cpi/images/favicon.png?v=2"
       link: "https://c-pi.org"
       dashboard-heading: "Status serwisu"
       dashboard-subheading: "Bieżąca dostępność i działanie c-pi.org"
       default-sort-by: group
       dark-mode: false
       favicon:
-        default: "https://c-pi.org/user/themes/quark/images/favicon.png"
-        size16x16: "https://c-pi.org/user/themes/quark/images/favicon.png"
-        size32x32: "https://c-pi.org/user/themes/quark/images/favicon.png"
+        default: "https://c-pi.org/user/themes/cpi/images/favicon.png?v=2"
+        size16x16: "https://c-pi.org/user/themes/cpi/images/favicon.png?v=2"
+        size32x32: "https://c-pi.org/user/themes/cpi/images/favicon.png?v=2"
       buttons:
         - name: "Strona główna"
           link: "https://c-pi.org"
@@ -45,48 +45,49 @@ data:
         - name: "Tematy"
           link: "https://c-pi.org/tematy"
       custom-css: |
+        /* tokens taken from c-pi.org: paper/ink/line, brand blue, 14px radius */
         :root {
-          --background: 210 33% 98% !important;
-          --foreground: 217 15% 17% !important;
-          --card: 0 0% 100% !important;
-          --card-foreground: 217 15% 17% !important;
-          --popover: 0 0% 100% !important;
-          --popover-foreground: 217 15% 17% !important;
-          --primary: 213 85% 56% !important;
-          --primary-foreground: 0 0% 100% !important;
-          --secondary: 210 33% 96% !important;
-          --secondary-foreground: 217 15% 27% !important;
-          --muted: 210 33% 96% !important;
-          --muted-foreground: 221 15% 47% !important;
-          --accent: 213 90% 96% !important;
-          --accent-foreground: 213 85% 42% !important;
+          --background: 42 39% 94% !important;
+          --foreground: 222 19% 14% !important;
+          --card: 42 39% 94% !important;
+          --card-foreground: 222 19% 14% !important;
+          --popover: 42 39% 94% !important;
+          --popover-foreground: 222 19% 14% !important;
+          --primary: 217 69% 47% !important;
+          --primary-foreground: 42 39% 94% !important;
+          --secondary: 41 38% 89% !important;
+          --secondary-foreground: 222 19% 14% !important;
+          --muted: 41 38% 89% !important;
+          --muted-foreground: 224 5% 41% !important;
+          --accent: 41 38% 89% !important;
+          --accent-foreground: 217 72% 36% !important;
           --destructive: 0 72% 51% !important;
           --destructive-foreground: 0 0% 100% !important;
-          --border: 220 14% 92% !important;
-          --input: 220 14% 92% !important;
-          --ring: 213 85% 56% !important;
-          --radius: 0.375rem !important;
+          --border: 40 33% 84% !important;
+          --input: 40 33% 84% !important;
+          --ring: 217 69% 47% !important;
+          --radius: 0.875rem !important;
         }
         :root.dark {
-          --background: 217 20% 13% !important;
-          --foreground: 210 20% 92% !important;
-          --card: 217 19% 16% !important;
-          --card-foreground: 210 20% 92% !important;
-          --popover: 217 19% 16% !important;
-          --popover-foreground: 210 20% 92% !important;
-          --primary: 213 85% 56% !important;
-          --primary-foreground: 0 0% 100% !important;
-          --secondary: 217 16% 22% !important;
-          --secondary-foreground: 210 20% 92% !important;
-          --muted: 217 16% 22% !important;
-          --muted-foreground: 215 16% 65% !important;
-          --accent: 213 60% 24% !important;
-          --accent-foreground: 210 20% 92% !important;
+          --background: 220 14% 8% !important;
+          --foreground: 41 37% 90% !important;
+          --card: 218 15% 11% !important;
+          --card-foreground: 41 37% 90% !important;
+          --popover: 218 15% 11% !important;
+          --popover-foreground: 41 37% 90% !important;
+          --primary: 218 82% 71% !important;
+          --primary-foreground: 220 14% 8% !important;
+          --secondary: 217 13% 19% !important;
+          --secondary-foreground: 41 37% 90% !important;
+          --muted: 217 13% 19% !important;
+          --muted-foreground: 45 6% 58% !important;
+          --accent: 217 13% 19% !important;
+          --accent-foreground: 41 37% 90% !important;
           --destructive: 0 63% 40% !important;
-          --destructive-foreground: 210 20% 92% !important;
-          --border: 217 16% 24% !important;
-          --input: 217 16% 24% !important;
-          --ring: 213 85% 56% !important;
+          --destructive-foreground: 41 37% 90% !important;
+          --border: 217 13% 19% !important;
+          --input: 217 13% 19% !important;
+          --ring: 218 82% 71% !important;
         }
         body {
           font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
