@@ -29,6 +29,7 @@ data:
       dashboard-subheading: "Real-time monitoring of infrastructure and services"
       link: "https://piotrkrzysztof.dev"
       # the blog's own icon (32x32 png; the unhashed /icon path stays stable across rebuilds)
+      logo: "https://piotrkrzysztof.dev/icon"
       favicon:
         default: "https://piotrkrzysztof.dev/icon"
         size16x16: "https://piotrkrzysztof.dev/icon"
