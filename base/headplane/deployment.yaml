@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: headplane
-          image: ghcr.io/tale/headplane:0.7.1
+          image: ghcr.io/tale/headplane:0.8.2
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
