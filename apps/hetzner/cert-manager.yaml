@@ -15,3 +15,6 @@ spec:
     automated:
       selfHeal: true
       prune: true
+    syncOptions:
+      # the CRDs are too large for client-side apply's last-applied annotation
+      - ServerSideApply=true

@@ -2,4 +2,6 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
 resources:
+  # upstream install: bump by changing the version; Argo applies it server-side
+  - https://github.com/cert-manager/cert-manager/releases/download/v1.21.3/cert-manager.yaml
   - ../../../base/cert-manager
