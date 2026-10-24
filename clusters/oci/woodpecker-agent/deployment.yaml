@@ -16,6 +16,13 @@ spec:
       labels:
         app: woodpecker-agent
     spec:
+      # hostNetwork on purpose, as for Alloy: pods on this rke2/Rocky node cannot
+      # reach the tailnet (the internet works), the host can. The agent has to
+      # reach the Hetzner server at 100.64.0.25:30900, and hostNetwork gives it
+      # the node's tailnet identity (tag:cluster-oci) for the ACL. Step pods
+      # stay on the pod network.
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
       serviceAccountName: woodpecker-agent
       securityContext:
         runAsNonRoot: true
@@ -35,6 +42,10 @@ spec:
               value: "100.64.0.25:30900"
             - name: WOODPECKER_AGENT_LABELS
               value: platform=linux/arm64
+            # on the host network the default :3000 would listen on every
+            # interface of the node, including the public one
+            - name: WOODPECKER_HEALTHCHECK_ADDR
+              value: "127.0.0.1:3000"
             # local-path-provisioner v0.0.27 is RWO-only and unmarked as
             # default class; RWX default (true) leaves PVCs Pending.
             - name: WOODPECKER_BACKEND_K8S_STORAGE_RWX
