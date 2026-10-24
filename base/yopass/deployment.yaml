@@ -24,7 +24,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: yopass
-          image: jhaals/yopass:13.1.0
+          image: jhaals/yopass:16.0.1
           imagePullPolicy: IfNotPresent
           args:
             - --database
