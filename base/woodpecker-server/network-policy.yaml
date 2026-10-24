@@ -30,6 +30,15 @@ spec:
       ports:
         - protocol: TCP
           port: 9000
+    # gRPC from the OCI arm64 agent over the tailnet
+    # (woodpecker-grpc-nodeport.yaml -> ACL tag:cluster-oci -> :30900).
+    # The NodePort is externalTrafficPolicy: Local, so the source address survives.
+    - from:
+        - ipBlock:
+            cidr: 100.64.0.0/10
+      ports:
+        - protocol: TCP
+          port: 9000
     # Allow health checks from gatus
     - from:
         - namespaceSelector:

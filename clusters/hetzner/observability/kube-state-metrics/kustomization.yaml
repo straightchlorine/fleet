@@ -1,0 +1,43 @@
+# Exposes kube_pod_* / kube_node_* for the Kubernetes / Views dashboards.
+# Upstream standard manifests, pinned; trimmed to what those dashboards read.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: observability
+
+resources:
+  - https://raw.githubusercontent.com/kubernetes/kube-state-metrics/v2.20.0/examples/standard/service-account.yaml
+  - https://raw.githubusercontent.com/kubernetes/kube-state-metrics/v2.20.0/examples/standard/cluster-role.yaml
+  - https://raw.githubusercontent.com/kubernetes/kube-state-metrics/v2.20.0/examples/standard/cluster-role-binding.yaml
+  - https://raw.githubusercontent.com/kubernetes/kube-state-metrics/v2.20.0/examples/standard/deployment.yaml
+  - https://raw.githubusercontent.com/kubernetes/kube-state-metrics/v2.20.0/examples/standard/service.yaml
+
+patches:
+  # Upstream's ClusterRole can list and watch every Secret and ConfigMap in the
+  # cluster. Nothing here needs them, so replace its rules with the few kinds
+  # that --resources below actually collects.
+  - target:
+      kind: ClusterRole
+      name: kube-state-metrics
+    patch: |-
+      - op: replace
+        path: /rules
+        value:
+          - apiGroups: [""]
+            resources: [pods, nodes, namespaces]
+            verbs: [list, watch]
+          - apiGroups: [apps]
+            resources: [deployments, statefulsets, daemonsets]
+            verbs: [list, watch]
+  - target:
+      kind: Deployment
+      name: kube-state-metrics
+    patch: |-
+      - op: add
+        path: /spec/template/spec/containers/0/args
+        value:
+          - --resources=pods,nodes,namespaces,deployments,statefulsets,daemonsets
+      - op: add
+        path: /spec/template/spec/containers/0/resources
+        value:
+          requests: {cpu: 10m, memory: 48Mi}
+          limits: {cpu: 100m, memory: 192Mi}

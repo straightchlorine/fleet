@@ -5,6 +5,7 @@ resources:
   - ../../../base/alloy
   - ../../../base/grafana
   - ../../../base/prometheus
+  - kube-state-metrics
   - namespace.yaml
   - configmap-loki.yaml
   - configmap-alloy.yaml

@@ -60,6 +60,11 @@ spec:
                 secretKeyRef:
                   name: woodpecker-agent-secret
                   key: agent-secret
+            - name: WOODPECKER_GRPC_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: woodpecker-grpc-secret
+                  key: grpc-secret
             - name: WOODPECKER_COOKIE_SECURE
               valueFrom:
                 configMapKeyRef:

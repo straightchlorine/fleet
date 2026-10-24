@@ -1,0 +1,22 @@
+# NodePort exposure of the existing gRPC port so the OCI arm64 agent
+# (clusters/oci/woodpecker-agent) reaches woodpecker-server over the
+# tailnet; base Service stays ClusterIP for in-cluster traffic. nodePort
+# hardcoded for the headscale ACL rule (BUILD_PLAN B8.1), same convention
+# as clusters/talos/headroom/service.yaml:30878.
+apiVersion: v1
+kind: Service
+metadata:
+  name: woodpecker-grpc
+  namespace: woodpecker
+spec:
+  type: NodePort
+  # keeps the tailnet source address for the server's network policy
+  externalTrafficPolicy: Local
+  selector:
+    app: woodpecker-server
+  ports:
+    - name: grpc
+      port: 9000
+      targetPort: 9000
+      nodePort: 30900
+      protocol: TCP

@@ -81,7 +81,20 @@ data:
         relabel_configs:
           - source_labels: [__meta_kubernetes_node_name]
             target_label: instance
+          # external_labels are not stored on local series, and the Kubernetes /
+          # Views dashboards filter every query on cluster="$cluster".
+          - target_label: cluster
+            replacement: hetzner
         metric_relabel_configs:
           - source_labels: [__name__]
             regex: container_(memory_working_set_bytes|memory_rss|spec_memory_limit_bytes|cpu_usage_seconds_total|cpu_cfs_periods_total|cpu_cfs_throttled_periods_total|oom_events_total|memory_failcnt|network_receive_bytes_total|network_transmit_bytes_total)
             action: keep
+
+      # kube_pod_*, kube_node_*: object state the Kubernetes / Views dashboards
+      # divide the cAdvisor usage by (requests, limits, phase). In-cluster pull
+      # over the headless Service (kube-state-metrics/).
+      - job_name: kube-state-metrics
+        static_configs:
+          - targets: ["kube-state-metrics.observability.svc.cluster.local:8080"]
+            labels:
+              cluster: hetzner
