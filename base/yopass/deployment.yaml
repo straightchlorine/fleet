@@ -68,7 +68,7 @@ spec:
               drop:
                 - ALL
         - name: memcached
-          image: memcached:1.6-alpine
+          image: memcached:1.6.45-alpine
           imagePullPolicy: IfNotPresent
           args:
             - -m

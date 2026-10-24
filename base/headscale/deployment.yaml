@@ -21,7 +21,7 @@ spec:
         fsGroup: 1000
       containers:
         - name: headscale
-          image: headscale/headscale:0.29.5
+          image: headscale/headscale:0.29.6
           imagePullPolicy: IfNotPresent
           command:
             - headscale

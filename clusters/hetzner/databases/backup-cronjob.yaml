@@ -25,7 +25,7 @@ spec:
           initContainers:
             # Step 1: dump postgres
             - name: dump
-              image: postgres:17.4-alpine
+              image: postgres:17.11-alpine
               command:
                 - /bin/sh
                 - -c
@@ -70,7 +70,7 @@ spec:
           containers:
             # Step 2: upload to R2 + keep local copy
             - name: upload
-              image: rclone/rclone:1.69
+              image: rclone/rclone:1.75.2
               command:
                 - /bin/sh
                 - -c

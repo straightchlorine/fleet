@@ -29,7 +29,26 @@ data:
       dashboard-subheading: "Real-time monitoring of infrastructure and services"
       link: "https://piotrkrzysztof.dev"
       default-sort-by: group
-      dark-mode: true
+      dark-mode: false
+      # Palette and type taken from piotrkrzysztof.dev (parchment/brown, Cormorant Garamond).
+      # Gatus themes via shadcn HSL variables, so overriding them restyles everything.
+      custom-css: |
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&display=swap');
+        :root {
+          --background: 37 39% 94%;
+          --foreground: 31 34% 18%;
+          --card: 37 39% 94%;
+          --card-foreground: 31 34% 18%;
+          --primary: 31 34% 18%;
+          --primary-foreground: 37 39% 94%;
+          --muted: 37 30% 90%;
+          --muted-foreground: 32 20% 39%;
+          --border: 36 25% 78%;
+          --input: 36 25% 78%;
+          --ring: 37 31% 38%;
+          --radius: 0.25rem;
+        }
+        body { font-family: 'Cormorant Garamond', Georgia, serif; font-size: 1.125rem; }
       buttons:
         - name: "Blog"
           link: "https://piotrkrzysztof.dev"
@@ -246,6 +265,9 @@ data:
           - type: ntfy
         ui:
           hide-url: true
+
+      # WKE probes (site + /api/v1/status) removed until the project exists; the
+      # old definitions are in git history and will need rewriting anyway.
 
       - name: QP
         group: docs

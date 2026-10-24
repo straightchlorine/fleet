@@ -22,7 +22,7 @@ spec:
         fsGroup: 999
       containers:
         - name: postgres
-          image: postgres:17.4-alpine
+          image: postgres:17.11-alpine
           ports:
             - name: postgres
               containerPort: 5432
