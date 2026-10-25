@@ -1,0 +1,23 @@
+# Registers usher's own k8s/ manifests. Image Updater resolves new semver
+# api tags and writes the resolved tag back to k8s/kustomization.yaml
+# in the usher repo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: usher
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/straightchlorine/usher.git
+    path: k8s
+    targetRevision: master
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: usher
+  syncPolicy:
+    automated:
+      selfHeal: true
+      prune: true
+    syncOptions:
+      - CreateNamespace=true

@@ -1,0 +1,24 @@
+# Resolves new semver api tags for the usher app and writes them back to
+# k8s/kustomization.yaml in the usher repo.
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: usher
+  namespace: argocd
+  annotations:
+    # lets this sync in the same pass that installs the CRD
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  writeBackConfig:
+    method: "git:secret:argocd/github-writeback"
+    gitConfig:
+      branch: master
+      writeBackTarget: kustomization
+  applicationRefs:
+    - namePattern: usher
+      images:
+        - alias: api
+          imageName: ghcr.io/straightchlorine/usher/api
+          commonUpdateSettings:
+            updateStrategy: semver
+            allowTags: "regexp:^[0-9]+\\.[0-9]+\\.[0-9]+$"

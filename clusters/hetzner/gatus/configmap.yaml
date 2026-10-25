@@ -210,6 +210,37 @@ data:
         alerts:
           - type: ntfy
 
+      - name: Usher API
+        group: external
+        url: https://usher-api.piotrkrzysztof.dev/api/health
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 5000"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: ntfy
+
+      - name: Usher
+        group: external
+        url: https://usher.piotrkrzysztof.dev
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: ntfy
+
+      # Through the Worker: a missing or mismatched proxy key makes the API answer 403.
+      - name: Usher API via Worker
+        group: external
+        url: https://usher.piotrkrzysztof.dev/api/events
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+        alerts:
+          - type: ntfy
+
       # Liveness: API up, no DB query.
       - name: Honeywatch API Liveness
         group: external

@@ -23,6 +23,8 @@ Personal GitOps repo for my Kubernetes clusters.
 | Blog | [piotrkrzysztof.dev](https://piotrkrzysztof.dev) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_blog/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_blog/uptimes/24h/badge.svg) |
 | Honeywatch Dashboard | [honey.piotrkrzysztof.dev](https://honey.piotrkrzysztof.dev) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-dashboard/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-dashboard/uptimes/24h/badge.svg) |
 | Honeywatch API | [honey.piotrkrzysztof.dev/api](https://honey.piotrkrzysztof.dev/api/stats) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-api/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_honeywatch-api/uptimes/24h/badge.svg) |
+| Usher | [usher.piotrkrzysztof.dev](https://usher.piotrkrzysztof.dev) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_usher/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_usher/uptimes/24h/badge.svg) |
+| Usher API | [usher-api.piotrkrzysztof.dev](https://usher-api.piotrkrzysztof.dev/api/health) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_usher-api/health/badge.svg) | ![](https://status.codextechnologies.org/api/v1/endpoints/external_usher-api/uptimes/24h/badge.svg) |
 | c-pi.org Status | [status.c-pi.org](https://status.c-pi.org) | ![](https://status.c-pi.org/api/v1/endpoints/serwis_c-pi-org/health/badge.svg) | ![](https://status.c-pi.org/api/v1/endpoints/serwis_c-pi-org/uptimes/24h/badge.svg) |
 
 
@@ -32,9 +34,10 @@ Personal GitOps repo for my Kubernetes clusters.
 apps/            # ArgoCD Application manifests (bootstrap)
 base/            # Shared Kustomize bases (cluster-agnostic)
 clusters/        # Cluster-specific overlays and configs
-compose/         # Docker Compose setups (for future migration)
+compose/         # Docker Compose setups
 ```
 
 ## Clusters
 
-- **Hetzner** — k3s single-node with Traefik ingress, cert-manager (Let's Encrypt), and Sealed Secrets
+- **Hetzner** — k3s single-node with Traefik ingress, cert-manager (Let's Encrypt), and Sealed Secrets. Runs the observability stack (Prometheus, Loki, Grafana, Alloy) and the ArgoCD that manages both clusters.
+- **OCI** — single-node rke2 (arm64), reachable only over the headscale tailnet. Registered in the Hetzner ArgoCD across that tunnel; hosts WKE, the native arm64 Woodpecker agent and the host telemetry agent (`clusters/oci/observability`). Tailnet prerequisites and the bootstrap order live in [clusters/oci/README.md](clusters/oci/README.md).

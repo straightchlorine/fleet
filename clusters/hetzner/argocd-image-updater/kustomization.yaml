@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - https://raw.githubusercontent.com/argoproj-labs/argocd-image-updater/v1.4.0/config/install.yaml
   - imageupdater-honeywatch.yaml
+  - imageupdater-usher.yaml
 # commit identity - using a bot set up for this purpose; additionally skips ci
 patches:
   - target:
