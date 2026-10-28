@@ -27,7 +27,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: headroom
-          image: ghcr.io/headroomlabs-ai/headroom:0.40.0-code-nonroot@sha256:2cdf4fd37d415076e0c30eafeb21a50b04456e058caa84c1deb6bdccc6a2fe61
+          image: ghcr.io/headroomlabs-ai/headroom:0.42.0-code-nonroot@sha256:ec6036a3ac8001aceed69f33eec96f4bb3f1eb4df1cfbdcfe014ef38f4a700e1
           imagePullPolicy: IfNotPresent
           args:
             - --host
