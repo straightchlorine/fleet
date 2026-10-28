@@ -30,7 +30,7 @@ spec:
         runAsGroup: 1000
       containers:
         - name: woodpecker-agent
-          image: woodpeckerci/woodpecker-agent:v3.18.1
+          image: woodpeckerci/woodpecker-agent:v3.19.0
           env:
             - name: WOODPECKER_BACKEND
               value: kubernetes
