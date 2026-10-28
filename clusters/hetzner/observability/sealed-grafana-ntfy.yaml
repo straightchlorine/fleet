@@ -1,0 +1,13 @@
+---
+apiVersion: bitnami.com/v1alpha1
+kind: SealedSecret
+metadata:
+  name: grafana-ntfy
+  namespace: observability
+spec:
+  encryptedData:
+    token: AgBp9LascLgydaUiUTtwMKyQ+itzyE93p+hMk2vhQV2kbWCKIljojClZSByEyR33f2f+E0HmPB9DTJlG4Ooojd0eGcDttMwCRpi6ZP8KmFF2MtDVmwjHNc1F3C85W+5g5EP81+jYD2+CAS0nHuTE+z6Rp3ytr/z6V/U1mHBbVoXTSaYLBsSooUz3KND5eaqEf2BkqNJDoW7JTjwvfIDcEWKHmfBMqpjVw/82Q6IXt//X4nFbT2i199D/5QgAcBsK1+yN+YKUX2iLtZ/yYjfBoFzWYvmK+nBzv+iMCGZZHsOO2SstiPoshQTkB4DjLfYWAipU9Mz7En1FG/o1jDJJQAwD7YpWUizQEGePRSuyPco4hXSRLZv7o/ZBMxnIXvVELdZ1XpKahGtG6ivY/j/OyvsYTVlvZ++fOOcoik6I9VAe7SlqVwO6hTWyyTqjdQGDj4FpB2n0VmKoZkdzT2ROlIAdRypCTjDZmJ67/Y8WJp/VtJGbQAPMKFkkHzeCDWFYolF1zfas2lZ006Kox608VeZrJhCNCZ2dpSIDoaBcNqJn3Sb4SbUV8Mb79sb9jI0PQ3RQjjPdu7IPXHWaA3cXNjaQhc6iP2PWLTQcA96g+8Sh8ASpY98pu/By8vGw4m+IhrglmV5RQ1a5Jv39ZKgf60xcgCRV7DjS990t0JOmWH58U03eSgwRvUCSyVNwwzScgXWuaRS71PmSKgK4YUGoFlYivf1m3JvlBk17bOtJGgjT7g==
+  template:
+    metadata:
+      name: grafana-ntfy
+      namespace: observability

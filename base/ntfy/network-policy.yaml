@@ -33,6 +33,17 @@ spec:
       ports:
         - protocol: TCP
           port: 80
+    # Alert notifications from Grafana
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: observability
+          podSelector:
+            matchLabels:
+              app: grafana
+      ports:
+        - protocol: TCP
+          port: 80
   egress:
     # DNS
     - to:

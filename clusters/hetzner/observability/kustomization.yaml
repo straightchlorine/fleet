@@ -10,7 +10,11 @@ resources:
   - configmap-loki.yaml
   - configmap-alloy.yaml
   - configmap-grafana-datasources.yaml
+  - configmap-grafana-alerting.yaml
   - sealed-grafana-admin.yaml
+  # Created by hand with kubeseal (the ntfy token for the alerting contact point);
+  # the build fails until it exists, so Grafana never rolls out without its secret.
+  - sealed-grafana-ntfy.yaml
   - ingress-grafana.yaml
   - configmap-prometheus.yaml
   - middleware.yaml

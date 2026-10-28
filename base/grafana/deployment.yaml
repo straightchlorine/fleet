@@ -51,11 +51,20 @@ spec:
               value: "false"
             - name: GF_ANALYTICS_CHECK_FOR_UPDATES
               value: "false"
+            # Read by provisioning/alerting (the ntfy contact point's bearer token).
+            - name: NTFY_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: grafana-ntfy
+                  key: token
           volumeMounts:
             - name: data
               mountPath: /var/lib/grafana
             - name: datasources
               mountPath: /etc/grafana/provisioning/datasources
+              readOnly: true
+            - name: alerting
+              mountPath: /etc/grafana/provisioning/alerting
               readOnly: true
           livenessProbe:
             httpGet:
@@ -94,3 +103,6 @@ spec:
         - name: datasources
           configMap:
             name: grafana-datasources
+        - name: alerting
+          configMap:
+            name: grafana-alerting

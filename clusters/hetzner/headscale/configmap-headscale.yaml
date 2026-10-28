@@ -131,20 +131,20 @@ data:
           "dst": ["tag:cluster-hetzner:30900"],
         },
 
-        // OCI host metrics reach the Hetzner observability stack.
-        // Prometheus remote-write and the Loki push path.
+        // OCI node and honeypot host telemetry reach the Hetzner observability
+        // stack. Prometheus remote-write and the Loki push path.
         // (nodeport-prometheus.yaml and nodeport-loki.yaml)
         //
         // No credentials on either path. This ACL and the ingress rules
         // (network-policy.yaml on both sides) are the gate.
         {
           "action": "accept",
-          "src": ["tag:cluster-oci"],
+          "src": ["tag:cluster-oci", "tag:honeypot"],
           "dst": ["tag:cluster-hetzner:30090"],
         },
         {
           "action": "accept",
-          "src": ["tag:cluster-oci"],
+          "src": ["tag:cluster-oci", "tag:honeypot"],
           "dst": ["tag:cluster-hetzner:30310"],
         },
 

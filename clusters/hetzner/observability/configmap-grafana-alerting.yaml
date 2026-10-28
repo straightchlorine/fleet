@@ -1,0 +1,71 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: grafana-alerting
+  namespace: observability
+  labels:
+    app: grafana
+data:
+  alerting.yaml: |
+    apiVersion: 1
+
+    # One ntfy topic for every alert; ntfy's built-in `grafana` template turns the
+    # webhook JSON into a readable title and message.
+    contactPoints:
+      - orgId: 1
+        name: ntfy
+        receivers:
+          - uid: ntfy
+            type: webhook
+            settings:
+              url: http://ntfy.ntfy.svc.cluster.local/grafana-alerts?template=grafana
+              httpMethod: POST
+              authorization_scheme: Bearer
+              # Env from the grafana-ntfy secret: ntfy runs auth-default-access: deny-all.
+              authorization_credentials: $NTFY_TOKEN
+
+    policies:
+      - orgId: 1
+        receiver: ntfy
+
+    groups:
+      - orgId: 1
+        name: patching
+        folder: Hosts
+        interval: 10m
+        rules:
+          # Failed runs already page through the host's own OnFailure handler; this
+          # catches the silent case - a timer that stopped firing.
+          - uid: dnf-automatic-stale
+            title: Unattended updates stopped
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  refId: A
+                  # max_over_time rides out a reboot or a short push gap.
+                  expr: time() - max_over_time(node_systemd_timer_last_trigger_seconds{name="dnf-automatic.timer"}[1h])
+                  instant: true
+              - refId: B
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [129600]
+            # No series = the timer is unloaded or the host stopped pushing metrics;
+            # either way nobody can see whether it patches.
+            noDataState: Alerting
+            execErrState: Error
+            for: 30m
+            annotations:
+              summary: >-
+                dnf-automatic.timer on {{ $labels.instance }} has not fired for over
+                36h, or the host stopped reporting it.

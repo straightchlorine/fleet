@@ -63,3 +63,14 @@ spec:
       ports:
         - protocol: TCP
           port: 9090
+    # Alert notifications
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: ntfy
+          podSelector:
+            matchLabels:
+              app: ntfy
+      ports:
+        - protocol: TCP
+          port: 80
