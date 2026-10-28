@@ -44,6 +44,41 @@ talosctl -e 192.168.20.30 -n 192.168.20.30 read /proc/mounts | grep nvme
 kubectl apply -k clusters/talos/local-path-provisioner
 ```
 
+## Upgrading Talos
+
+The node boots an Image Factory build: schematic
+`69c0f32290e5f1abe266a219fbee33ff9f659fd49820452e47d626b86e292b4a` =
+`rpi_generic` overlay (`siderolabs/sbc-raspberrypi`) + `util-linux-tools`.
+Always pass that installer. The plain `siderolabs/installer` (and, from 1.14,
+talosctl's default `--image`) has no CM4 overlay and no extension.
+
+Upgrades never wipe the system disk (Talos >= 1.8), so `EPHEMERAL` (etcd,
+containerd, the old `/opt` local-path PVs) survives; the NVMe user volume is
+never touched. The backups are for a failed boot or a dead eMMC.
+
+```bash
+SID=69c0f32290e5f1abe266a219fbee33ff9f659fd49820452e47d626b86e292b4a
+T="talosctl -e 192.168.20.30 -n 192.168.20.30"
+B=~/backup/talos-$(date +%F); mkdir -p "$B"   # off-cluster: Infisical runs here
+
+# Backups. The machine config and infisical-secrets hold private keys.
+$T etcd snapshot "$B/etcd.snapshot"
+$T get mc -o yaml > "$B/machineconfig.yaml"
+kubectl -n infisical get secret infisical-secrets -o yaml > "$B/infisical-secrets.yaml"
+kubectl -n infisical exec postgres-0 -- pg_dump -U infisical -Fc infisicalDB > "$B/infisical.dump"
+
+# One minor at a time, latest patch first.
+$T upgrade --image factory.talos.dev/metal-installer/$SID:v1.13.7
+$T upgrade --image factory.talos.dev/metal-installer/$SID:v1.14.4
+
+# Keep the config's own reference in step (no reboot).
+$T patch mc --patch "[{\"op\":\"replace\",\"path\":\"/machine/install/image\",\"value\":\"factory.talos.dev/metal-installer/$SID:v1.14.4\"}]"
+$T get extensions   # util-linux-tools and the schematic id still listed
+```
+
+A boot failure rolls back to the previous image (A/B); `talosctl rollback`
+does it by hand. Kubernetes is upgraded separately (`talosctl upgrade-k8s`).
+
 ## Kiwix zims on the NVMe
 
 The kiwix Deployment mounts its local PVC read-only. Files go in through the

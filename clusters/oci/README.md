@@ -79,6 +79,17 @@ That is the namespaces (`wke` restricted, `woodpecker` privileged,
 each of them, the long-lived ServiceAccount token, cert-manager, sealed-secrets
 (v0.27.3 - this cluster's own keypair) and local-path-provisioner.
 
+The node runs SELinux enforcing and `/opt` is `usr_t`, so the provisioner's
+helper pod cannot create volume directories there: every PVC stays Pending and
+anything that needs one (the Woodpecker workspace) never starts. Label the path
+once, on the node:
+
+```sh
+sudo mkdir -p /opt/local-path-provisioner
+sudo semanage fcontext -a -t container_file_t '/opt/local-path-provisioner(/.*)?'
+sudo restorecon -Rv /opt/local-path-provisioner
+```
+
 Then, only once the webhook is up, the issuers (two applies, not one: the
 ClusterIssuers are CRs whose CRDs the previous step installs):
 

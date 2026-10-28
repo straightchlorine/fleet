@@ -82,12 +82,12 @@ spec:
               drop:
                 - ALL
             privileged: false
+          # The agent image has no shell, so an exec probe can never run; the
+          # agent serves its own health endpoint on this port.
           livenessProbe:
-            exec:
-              command:
-                - /bin/sh
-                - -c
-                - ps aux | grep '[w]oodpecker-agent' > /dev/null
+            httpGet:
+              path: /healthz
+              port: agent
             initialDelaySeconds: 30
             periodSeconds: 30
             timeoutSeconds: 5
