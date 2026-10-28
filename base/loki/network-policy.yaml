@@ -13,16 +13,6 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Push from outside the cluster (host Alloy agents) via the Traefik
-    # ingress; the ingress itself enforces basic auth and a source allowlist.
-    - from:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: traefik
-      ports:
-        - protocol: TCP
-          port: 3100
     # Push from Alloy
     - from:
         - podSelector:
@@ -31,8 +21,8 @@ spec:
       ports:
         - protocol: TCP
           port: 3100
-    # Push over the tailnet from the OCI host.
-    # (from hetzner/.../nodeport-loki.yaml -> ACL tag:cluster-oci -> :30310)
+    # Push over the tailnet from the OCI node and the honeypot.
+    # (from hetzner/.../nodeport-loki.yaml -> ACL tag:cluster-oci, tag:honeypot -> :30310)
     #
     # NOTE: Service uses externalTrafficPolicy: Local, so the source address
     # survives the NodePort hop. CIDR match ensures those calls are only from

@@ -1,5 +1,5 @@
 # NodePort exposure of the Prometheus remote-write receiver for the OCI rke2
-# host, the tailnet twin of ingress-prometheus.yaml.
+# and honeypot hosts; there is no public write path.
 #
 # Same externalTrafficPolicy: Local reasoning as nodeport-loki.yaml:
 # preserves the tailnet source address so 100.64.0.0/10 can be admitted and nothing else.

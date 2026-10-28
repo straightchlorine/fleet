@@ -17,11 +17,6 @@ resources:
   - sealed-grafana-ntfy.yaml
   - ingress-grafana.yaml
   - configmap-prometheus.yaml
-  - middleware.yaml
-  - sealed-loki-basic-auth.yaml
-  - sealed-prometheus-basic-auth.yaml
-  - ingress-loki.yaml
-  - ingress-prometheus.yaml
   - nodeport-loki.yaml
   - nodeport-prometheus.yaml
   # Host metrics for this node, scraped in-cluster by the `node-exporter` job.

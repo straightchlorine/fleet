@@ -51,6 +51,17 @@ spec:
               value: "false"
             - name: GF_ANALYTICS_CHECK_FOR_UPDATES
               value: "false"
+            # network-policy.yaml allows no egress past the cluster: switch off the
+            # startup calls to grafana.com (plugin preinstall/updates, signing keys,
+            # news) instead of logging their failures. Bundled datasources still load.
+            - name: GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES
+              value: "false"
+            - name: GF_PLUGINS_PREINSTALL_DISABLED
+              value: "true"
+            - name: GF_PLUGINS_PUBLIC_KEY_RETRIEVAL_DISABLED
+              value: "true"
+            - name: GF_NEWS_NEWS_FEED_ENABLED
+              value: "false"
             # Read by provisioning/alerting (the ntfy contact point's bearer token).
             - name: NTFY_TOKEN
               valueFrom:

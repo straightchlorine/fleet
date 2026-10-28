@@ -13,16 +13,6 @@ spec:
     - Ingress
     - Egress
   ingress:
-    # Remote-write from outside the cluster via the Traefik ingress, which
-    # enforces basic auth. Only /api/v1/write is routed there.
-    - from:
-        - namespaceSelector: {}
-          podSelector:
-            matchLabels:
-              app.kubernetes.io/name: traefik
-      ports:
-        - protocol: TCP
-          port: 9090
     # Queries from Grafana
     - from:
         - podSelector:
@@ -31,8 +21,8 @@ spec:
       ports:
         - protocol: TCP
           port: 9090
-    # Remote-write over the tailnet from the OCI host.
-    # (from hetzner/.../nodeport-prometheus.yaml -> ACL tag:cluster-oci -> :30090)
+    # Remote-write over the tailnet from the OCI node and the honeypot.
+    # (from hetzner/.../nodeport-prometheus.yaml -> ACL tag:cluster-oci, tag:honeypot -> :30090)
     #
     # NOTE: Service uses externalTrafficPolicy: Local, so the source address
     # survives the NodePort hop. CIDR match ensures those calls are only from

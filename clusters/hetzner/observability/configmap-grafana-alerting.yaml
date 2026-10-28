@@ -69,3 +69,43 @@ data:
               summary: >-
                 dnf-automatic.timer on {{ $labels.instance }} has not fired for over
                 36h, or the host stopped reporting it.
+
+      - orgId: 1
+        name: honeywatch
+        folder: Hosts
+        interval: 1m
+        rules:
+          # The ingestor rewrites its textfile every 15s. A dead ingestor leaves the
+          # last file behind, so its counters go flat instead of disappearing.
+          - uid: honeywatch-metrics-stale
+            title: Honeywatch ingestor metrics stale
+            condition: B
+            data:
+              - refId: A
+                relativeTimeRange:
+                  from: 600
+                  to: 0
+                datasourceUid: prometheus
+                model:
+                  refId: A
+                  expr: time() - node_textfile_mtime_seconds{file=~".*ingestor.prom"}
+                  instant: true
+              - refId: B
+                datasourceUid: __expr__
+                model:
+                  refId: B
+                  type: threshold
+                  expression: A
+                  conditions:
+                    - evaluator:
+                        type: gt
+                        params: [300]
+            # No series = metrics not enabled yet, or the host stopped pushing
+            # (the patching rule above already pages on that).
+            noDataState: OK
+            execErrState: Error
+            for: 5m
+            annotations:
+              summary: >-
+                The honeywatch ingestor on {{ $labels.instance }} has not
+                rewritten its metrics file for over 5 minutes.
