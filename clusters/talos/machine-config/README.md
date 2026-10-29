@@ -17,7 +17,7 @@ The node (CM4) has two disks:
 
 | File | Effect |
 |------|--------|
-| `install-disk.yaml` | `install.disk` -> `/dev/mmcblk0`. No reboot needed; only affects future upgrades. |
+| `install-disk.yaml` | `install.disk` -> `/dev/mmcblk0`, `install.image` -> the factory installer. No reboot needed; only affects future upgrades. |
 | `user-volume-local-path.yaml` | 200GB xfs user volume on the NVMe at `/var/mnt/local-path-provisioner`. Created at boot, so apply with a reboot. |
 
 ## Runbook (in order)
@@ -67,12 +67,14 @@ $T get mc -o yaml > "$B/machineconfig.yaml"
 kubectl -n infisical get secret infisical-secrets -o yaml > "$B/infisical-secrets.yaml"
 kubectl -n infisical exec postgres-0 -- pg_dump -U infisical -Fc infisicalDB > "$B/infisical.dump"
 
-# One minor at a time, latest patch first.
-$T upgrade --image factory.talos.dev/metal-installer/$SID:v1.13.7
+# One minor at a time, through the latest patch of the current one.
+$T upgrade --image factory.talos.dev/metal-installer/$SID:v1.13.12
 $T upgrade --image factory.talos.dev/metal-installer/$SID:v1.14.4
 
-# Keep the config's own reference in step (no reboot).
-$T patch mc --patch "[{\"op\":\"replace\",\"path\":\"/machine/install/image\",\"value\":\"factory.talos.dev/metal-installer/$SID:v1.14.4\"}]"
+# Keep the config's own reference in step (no reboot). A YAML patch: JSON6902
+# patches are rejected on a multi-document machine config. Bump the tag in
+# install-disk.yaml first.
+$T patch mc --patch @clusters/talos/machine-config/install-disk.yaml
 $T get extensions   # util-linux-tools and the schematic id still listed
 ```
 

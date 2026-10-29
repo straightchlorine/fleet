@@ -1,4 +1,7 @@
 # Machine-config patch - use talosctl patch mc
+# The image is the Image Factory build of schematic 69c0f322... (rpi_generic
+# overlay + util-linux-tools); the plain siderolabs installer lacks both.
 machine:
   install:
     disk: /dev/mmcblk0
+    image: factory.talos.dev/metal-installer/69c0f32290e5f1abe266a219fbee33ff9f659fd49820452e47d626b86e292b4a:v1.14.4
