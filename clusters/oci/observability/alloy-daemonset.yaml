@@ -5,7 +5,8 @@
 # namespace is labelled pod-security.kubernetes.io/enforce=privileged for this
 # purpose.
 #
-# No ServiceAccount/RBAC: nothing touches Kubernetes API.
+# The alloy ServiceAccount may list pods in the wke namespace, to find the pods
+# that ask to be scraped.
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -22,10 +23,10 @@ spec:
       labels:
         app: alloy
     spec:
-      # hostNetwork on purpose: the node's pod egress is broken (firewalld drops
-      # forwarded traffic on this rke2/Rocky node), while the host's own egress
-      # works. It also makes /proc the host's, so the node collectors read real
-      # data instead of the pod's namespaces.
+      serviceAccountName: alloy
+      # hostNetwork on purpose: pods on this node cannot reach the tailnet, where the Hetzner
+      # Loki and Prometheus are, while the host can. It also makes /proc the host's, so the
+      # node collectors read real data instead of the pod's namespaces.
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       securityContext:

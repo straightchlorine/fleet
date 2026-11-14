@@ -168,3 +168,66 @@ data:
       forward_to      = [prometheus.relabel.host.receiver]
       scrape_interval = "60s"
     }
+
+    // --- WKE application metrics -> the Hetzner Prometheus ---
+    // Pods in the wke namespace that carry prometheus.io/scrape: "true" are scraped on the
+    // annotated port and path. Only pods on this node are kept, like the host metrics.
+    discovery.kubernetes "wke" {
+      role = "pod"
+
+      namespaces {
+        names = ["wke"]
+      }
+    }
+
+    discovery.relabel "wke" {
+      targets = discovery.kubernetes.wke.targets
+
+      rule {
+        source_labels = ["__meta_kubernetes_pod_node_name"]
+        regex         = sys.env("NODE_NAME")
+        action        = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_scrape"]
+        regex         = "true"
+        action        = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_annotation_prometheus_io_path"]
+        regex         = "(.+)"
+        target_label  = "__metrics_path__"
+      }
+      rule {
+        source_labels = ["__address__", "__meta_kubernetes_pod_annotation_prometheus_io_port"]
+        regex         = "([^:]+)(?::\\d+)?;(\\d+)"
+        target_label  = "__address__"
+        replacement   = "$1:$2"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_namespace"]
+        target_label  = "namespace"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label  = "pod"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+        target_label  = "app"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+        target_label  = "job"
+      }
+      rule {
+        target_label = "cluster"
+        replacement  = "oci"
+      }
+    }
+
+    prometheus.scrape "wke" {
+      targets         = discovery.relabel.wke.output
+      forward_to      = [prometheus.remote_write.fleet.receiver]
+      scrape_interval = "60s"
+    }
