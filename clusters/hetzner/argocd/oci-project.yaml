@@ -8,10 +8,11 @@ spec:
   description: Apps deployed to the OCI rke2 cluster over the tailnet.
   sourceRepos:
     - https://codeberg.org/piotrkrzysztof/fleet.git
-    # - https://codeberg.org/piotrkrzysztof/wikipedia-knowledge-explorer.git
   destinations:
-    # - name: oci
-    #   namespace: wke
+    # Alloy Role and RoleBinding for pod discovery in wke come from fleet
+    # (clusters/oci/observability)
+    - name: oci
+      namespace: wke
     - name: oci
       namespace: woodpecker
     # Telemetry agent for the OCI host

@@ -85,6 +85,8 @@ spec:
                 configMapKeyRef:
                   name: woodpecker-server-config
                   key: log-level
+            - name: WOODPECKER_ASYNC_REPOSITORY_UPDATE
+              value: "true"
             - name: WOODPECKER_PLUGINS_PRIVILEGED
               value: "woodpeckerci/plugin-docker-buildx:latest"
             - name: WOODPECKER_DATABASE_DRIVER

@@ -16,8 +16,8 @@ spec:
       labels:
         app: woodpecker-agent
     spec:
-      # hostNetwork on purpose, as for Alloy: pods on this rke2/Rocky node cannot
-      # reach the tailnet (the internet works), the host can. The agent has to
+      # hostNetwork on purpose, as for Alloy: pods on this node cannot reach the
+      # tailnet (the internet works), the host can. The agent has to
       # reach the Hetzner server at 100.64.0.25:30900, and hostNetwork gives it
       # the node's tailnet identity (tag:cluster-oci) for the ACL. Step pods
       # stay on the pod network.

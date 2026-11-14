@@ -1,0 +1,9 @@
+# wke pods run non-root with a read-only root filesystem, no capabilities and
+# the RuntimeDefault seccomp profile, so the restricted Pod Security level fits.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: wke
+  labels:
+    name: wke
+    pod-security.kubernetes.io/enforce: restricted

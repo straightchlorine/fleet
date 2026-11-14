@@ -1,0 +1,12 @@
+# Machine-config patch - use talosctl patch mc
+# Talos >= 1.14 writes the DHCP search domains (internal.codextechnologies.org,
+# codex.home.arpa) into every pod's resolv.conf. With Kubernetes' ndots:5,
+# api.anthropic.com is tried as api.anthropic.com.internal.codextechnologies.org
+# first, and that zone's wildcard answers with this node's reverse proxy, so
+# every outbound TLS call fails on a hostname mismatch. Nothing here relies on
+# short names: the NAS and the proxy are addressed by FQDN.
+apiVersion: v1alpha1
+kind: ResolverConfig
+searchDomains:
+  disableDefault: true
+  domains: []

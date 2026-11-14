@@ -35,7 +35,7 @@ examples
   scripts/seal.sh -c hetzner-debian -n argocd -N oci-cluster \
     --label argocd.argoproj.io/secret-type=cluster \
     -l name=oci -l server=https://100.64.0.2:6443 \
-    -l namespaces=observability,woodpecker -l clusterResources=false \
+    -l namespaces=wke,observability,woodpecker -l clusterResources=false \
     -f config=/tmp/config.json -o clusters/hetzner/argocd/oci-cluster-sealed.yaml
 EOF
 }

@@ -19,6 +19,7 @@ The node (CM4) has two disks:
 |------|--------|
 | `install-disk.yaml` | `install.disk` -> `/dev/mmcblk0`, `install.image` -> the factory installer. No reboot needed; only affects future upgrades. |
 | `user-volume-local-path.yaml` | 200GB xfs user volume on the NVMe at `/var/mnt/local-path-provisioner`. Created at boot, so apply with a reboot. |
+| `resolver-no-search-domains.yaml` | Drops the DHCP search domains Talos 1.14 adds to pod `resolv.conf`; without it the `*.internal.codextechnologies.org` wildcard hijacks outbound names. Applies live; pods pick it up on restart. |
 
 ## Runbook (in order)
 

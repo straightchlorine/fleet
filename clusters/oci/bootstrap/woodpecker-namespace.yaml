@@ -1,6 +1,5 @@
-# PSA privileged: woodpeckerci/plugin-docker-buildx needs privileged pods
-# on the OCI arm64 agent (ARCHITECTURE.md section 12, BUILD_PLAN B8.2);
-# per B1.1 (pending, not yet confirmed against the live PSA default).
+# PSA privileged: woodpeckerci/plugin-docker-buildx needs privileged pods on the OCI arm64 agent,
+# so this namespace enforces the privileged Pod Security level.
 apiVersion: v1
 kind: Namespace
 metadata:

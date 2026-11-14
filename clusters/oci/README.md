@@ -1,14 +1,14 @@
 # OCI cluster: tailnet access, bootstrap, ArgoCD registration
 
-The OCI rke2 host is reachable **only** over the headscale tailnet: its API
-server (6443), its sshd and everything else on it sit on tailnet addresses.
-ArgoCD on Hetzner manages it through that tunnel, so there is no path in or out
-that does not start with a working tailnet session.
+The OCI rke2 host is managed only over the headscale tailnet: its API server
+(6443) and its sshd sit on tailnet addresses, and ArgoCD on Hetzner reaches it
+through that tunnel. The exception is WKE: once it is deployed, ports 80 and 443
+on the node are its only public listener. The OCI security list must allow TCP
+80 and 443 (precondition in section 2); the node has no host firewall: firewalld is disabled and
+the INPUT chain accepts by default (checked 2026-11-14).
 
 Order matters - every step assumes the previous one passed. Live facts (arch,
-allocatable, ingress class, pod CIDR, node tailnet IP) belong in the WKE repo's
-`docs/internal/architecture/OCI_FACTS.md`; `ARCHITECTURE.md` section 12 is the
-why behind each manifest here.
+allocatable, ingress class, node tailnet IP) are recorded in section 8 below.
 
 Contexts used below: `hetzner-debian` (the k3s cluster) and `oci-arm` (the rke2
 cluster), both already in `~/.kube/config`.
@@ -44,7 +44,7 @@ into the telemetry config):
 
 | Address | Which peer | Where it goes |
 |---|---|---|
-| `100.64.0.25` (`hetzner-k3s`) | tag:cluster-hetzner | already set in `clusters/oci/observability/configmap-alloy.yaml`; still a `<HETZNER_TAILNET_IP>` placeholder in `clusters/oci/woodpecker-agent/deployment.yaml` (`WOODPECKER_SERVER`, next slice) |
+| `100.64.0.25` (`hetzner-k3s`) | tag:cluster-hetzner | already set in `clusters/oci/observability/configmap-alloy.yaml` and in `clusters/oci/woodpecker-agent/deployment.yaml` (`WOODPECKER_SERVER`) |
 | `100.64.0.2` (`oci-arm`) | tag:cluster-oci | the `server=` value of `scripts/seal.sh` in §3 |
 
 ## 1. Prove the OCI cluster itself
@@ -58,17 +58,18 @@ kubectl --context oci-arm get ns -o custom-columns=NAME:.metadata.name,PSA:.meta
 ```
 
 Measured 2026-10-14 (details in §8): one Ready node, 4 CPU / 23Gi, no taints,
-`rke2-canal` CNI, and **no ingress class at all** - ADR 0008 assumes `traefik`,
-which is a WKE prerequisite, not current state. `wke` exists but is empty and
-unlabelled; `woodpecker` and `observability` do not exist yet: §2 creates them.
+`rke2-canal` CNI, and **no ingress class at all**: the WKE manifests use the
+`traefik` ingress class, which section 2 lists as a precondition. `wke` exists
+but is empty and unlabelled; `woodpecker` and `observability` do not exist yet:
+section 2 creates them.
 If `oci-arm` is missing, pull the kubeconfig off the node
 (`/etc/rancher/rke2/rke2.yaml`) and rewrite `127.0.0.1` to its tailnet address.
 
 ## 2. Bootstrap (one-shot `kubectl`; none of this is ArgoCD-managed)
 
-ArgoCD cannot create any of it: cluster-scoped resources are outside the `oci`
-AppProject (`clusterResourceWhitelist: []`), and it needs the Role/RoleBinding to
-exist before it can sync into a namespace.
+ArgoCD cannot create any of it: cluster-scoped resources are outside the `oci` and
+`wke` AppProjects (`clusterResourceWhitelist: []`), and it needs the
+Role/RoleBinding to exist before it can sync into a namespace.
 
 ```sh
 kubectl --context oci-arm apply -k clusters/oci/bootstrap
@@ -89,6 +90,22 @@ sudo mkdir -p /opt/local-path-provisioner
 sudo semanage fcontext -a -t container_file_t '/opt/local-path-provisioner(/.*)?'
 sudo restorecon -Rv /opt/local-path-provisioner
 ```
+
+Before the issuers, WKE needs its entry point. This is done by hand on the
+node, not by ArgoCD. Enable RKE2's packaged Traefik with `ingress-controller:
+traefik` in `/etc/rancher/rke2/config.yaml`, then restart `rke2-server`. Check
+afterwards:
+
+```sh
+kubectl --context oci-arm get ingressclass                # traefik is listed
+kubectl --context oci-arm -n kube-system get pods -l app.kubernetes.io/name=rke2-traefik
+kubectl --context oci-arm get crd middlewares.traefik.io  # exists
+```
+
+The OCI security list must allow TCP 80 and 443: they become the node's only
+public listener, and the HTTP-01 challenge of the issuers below arrives on port
+80. The node has no host firewall: firewalld is disabled and the INPUT chain accepts by default
+(checked 2026-11-14). `wke.piotrkrzysztof.dev` is a DNS-only record at Cloudflare.
 
 Then, only once the webhook is up, the issuers (two applies, not one: the
 ClusterIssuers are CRs whose CRDs the previous step installs):
@@ -111,13 +128,13 @@ jq -n --rawfile t /tmp/argocd-manager-token --rawfile ca /tmp/oci-ca.crt \
 scripts/seal.sh -c hetzner-debian -n argocd -N oci-cluster \
   --label argocd.argoproj.io/secret-type=cluster \
   -l name=oci -l server=https://100.64.0.2:6443 \
-  -l namespaces=observability,woodpecker -l clusterResources=false \
+  -l namespaces=wke,observability,woodpecker -l clusterResources=false \
   -f config=/tmp/oci-config.json -o clusters/hetzner/argocd/oci-cluster-sealed.yaml
 rm -f /tmp/argocd-manager-token /tmp/oci-ca.crt /tmp/oci-config.json
 ```
 
 Sealing with the committed Hetzner public key is correct here - the Secret lives
-in the *Hetzner* cluster. `namespaces: "wke,woodpecker,observability"` and
+in the *Hetzner* cluster. `namespaces: "wke,observability,woodpecker"` and
 `clusterResources: "false"` are what stop ArgoCD from treating the cluster as
 cluster-wide, which is the failure described in §5.
 
@@ -127,9 +144,36 @@ cluster-wide, which is the failure described in §5.
 (`apps/hetzner/root.yaml`) syncs `https://codeberg.org/piotrkrzysztof/fleet.git`
 at `master`; an uncommitted manifests directory is an empty one.
 
-```sh
-git add -A && git commit -m "feat(oci): telemetry over the tailnet" && git push
-```
+Add files by path, never with `git add -A`: the working tree also holds unrelated
+changes (for example `.claude/commands/`, the talos files and the `wke.json`
+dashboard below).
+
+The safe order for WKE:
+
+1. On the node: enable Traefik, create the DNS record, open ports 80 and 443
+   (the precondition in section 2). Nothing to commit.
+2. Reseal `clusters/hetzner/argocd/oci-cluster-sealed.yaml` so its namespace list
+   includes `wke` (section 3; the usage example in `scripts/seal.sh` now says so
+   too), and push it with `clusters/hetzner/argocd/wke-project.yaml` (the `wke`
+   AppProject, which the Application in step 6 names), `oci-project.yaml`
+   (its `wke` destination stays for the Alloy Role) and the edited
+   `clusters/hetzner/argocd/kustomization.yaml` (it lists `wke-project.yaml`;
+   without it the project is never created). Sections 2 and 3 may run in either order.
+3. Apply `clusters/oci/bootstrap` (namespace `wke` with the restricted
+   pod-security level, `wke-argocd-rbac.yaml`) and
+   `clusters/oci/cert-manager-config` (section 2). Commit both directories as well.
+   If you followed section 2 already, the applies are done and idempotent.
+4. Push `clusters/oci/observability`. Its new Role lives in `wke`, so steps 2 and
+   3 come first.
+5. In the WKE repository: merge `k8s/base` to `master`, publish the tag `0.1.0`
+   and make the three ghcr packages (`wke-api`, `wke-ml`, `wke-web`) public.
+6. Last: `apps/oci/wke.yaml` and
+   `clusters/hetzner/argocd-image-updater/imageupdater-wke.yaml` with its
+   `kustomization.yaml`.
+7. Once `kubectl --context oci-arm -n wke get certificate` shows the certificate
+   ready: the WKE entries in `clusters/hetzner/gatus/configmap.yaml`. They alert
+   after three failed probes, so pushing them earlier pages you. The KSeF entry
+   sits in the same file and can go at any time (`git add -p`).
 
 Then once, on Hetzner:
 
@@ -141,51 +185,9 @@ kubectl --context hetzner-debian apply -f apps/hetzner/oci-root.yaml   # only if
 `apps/oci/{wke,woodpecker-agent,observability}.yaml`, and those children sync
 into the OCI cluster over the tunnel.
 
-### First slice: telemetry only
-
-The first rollout is deliberately `observability` alone - it has no coupling to
-WKE or Woodpecker (no ingress, no cert-manager, no PVCs) and it proves the whole
-tailnet + ArgoCD + NetworkPolicy path on its own. Commit exactly this set and
-leave the rest for the next slice:
-
-```
-# Hetzner
-base/loki/network-policy.yaml
-base/prometheus/network-policy.yaml
-base/headscale/deployment.yaml
-base/prometheus/deployment.yaml
-clusters/hetzner/headscale/configmap-headscale.yaml
-clusters/hetzner/observability/namespace.yaml
-clusters/hetzner/observability/kustomization.yaml
-clusters/hetzner/observability/configmap-prometheus.yaml
-clusters/hetzner/observability/nodeport-loki.yaml
-clusters/hetzner/observability/nodeport-prometheus.yaml
-clusters/hetzner/observability/node-exporter-daemonset.yaml
-clusters/hetzner/observability/node-exporter-service.yaml
-clusters/hetzner/argocd/oci-project.yaml
-scripts/seal.sh
-
-# Required by the configMapGenerator that file already had - omitting it makes the
-# live observability app's kustomize build fail, taking Grafana/Loki/Prometheus
-# with it.
-clusters/hetzner/observability/dashboards/wke.json
-
-# OCI
-clusters/oci/bootstrap/            # namespaces + argocd-manager RBAC + token
-clusters/oci/cert-manager-config/  # §2's second apply
-clusters/oci/observability/
-apps/oci/observability.yaml
-clusters/oci/README.md
-
-# Unchanged until §3 reseals it, so nothing to add today:
-clusters/hetzner/argocd/oci-cluster-sealed.yaml
-```
-
-Deliberately **not** in this commit: `apps/oci/{wke,woodpecker-agent}.yaml`,
-`clusters/oci/woodpecker-agent/`, `clusters/hetzner/woodpecker/*` (the gRPC
-NodePort and its sealed secret), `base/woodpecker-server/deployment.yaml` and
-`clusters/hetzner/observability/dashboards/wke.json`. `git add -A` drags all of
-them in - including `.claude/commands/` - so add by path.
+The WKE dashboard file `clusters/hetzner/observability/dashboards/wke.json` is
+kept out of git until Grafana gets dashboard provisioning; it can be imported by
+hand.
 
 ## 5. Verify
 
@@ -205,7 +207,7 @@ Failure modes worth recognising:
 | Symptom | Cause |
 |---|---|
 | `forbidden` on every list / "not permitted" on the cluster | the registration secret has no `namespaces` key (§3 not applied): ArgoCD treats the cluster as cluster-wide while the token is namespaced, so the cache never syncs |
-| `namespace observability is not permitted` | `oci-project.yaml` destinations and the sealed `namespaces` list are out of lockstep with the app's destination |
+| `namespace observability is not permitted` | `oci-project.yaml`/`wke-project.yaml` destinations and the sealed `namespaces` list are out of lockstep with the app's destination |
 | app OutOfSync with an empty diff | the path does not exist at the synced revision - §4's push |
 
 ### After the first sync: two restarts ArgoCD will not do for you
@@ -236,8 +238,16 @@ Three hosts report into the Hetzner stack; only the first is scraped.
 
 OCI specifics:
 
-- `clusters/oci/observability/configmap-alloy.yaml` holds both pipelines; both
-  endpoints point at `100.64.0.25` (`hetzner-k3s`, §0).
+- `clusters/oci/observability/configmap-alloy.yaml` holds the pipelines; the Loki
+  push and the remote-write endpoint both point at `100.64.0.25` (`hetzner-k3s`,
+  section 0).
+- Alloy also scrapes the pods in `wke` that are annotated `prometheus.io/scrape:
+  "true"`, only those on this node, labelled `cluster=oci`. Discovery goes
+  through the `alloy` ServiceAccount and the Role in
+  `clusters/oci/observability/rbac.yaml`; the samples use the same remote write,
+  with no credentials. How the network policies treat host-to-pod traffic has to
+  be checked after the first sync, for example `up{cluster="oci",namespace="wke"}`
+  in Prometheus.
 - The sinks are NodePorts on the Hetzner node - `30090` remote-write, `30310` Loki
   push (`clusters/hetzner/observability/nodeport-*.yaml`) - that exist only for the
   tunnel. `externalTrafficPolicy: Local` is load-bearing: it preserves the tailnet
@@ -269,43 +279,21 @@ Job variable should offer `integrations/unix` (honeypot and OCI node side by
 side) and `node-exporter` (the Hetzner node); `{cluster="oci"}` in Loki should
 show the OCI host's journal plus `{namespace="wke"}` pod streams.
 
-## 7. Known gaps as of this commit
+## 7. Known gaps
 
-1. **The OCI change set had never been committed.** Everything under
-   `clusters/oci/` and `apps/oci/`, plus the matching edits in
-   `clusters/hetzner/{argocd,headscale,woodpecker}`, was untracked or unstaged.
-   ArgoCD only ever sees `master`, so none of it existed - §4 is the step that
-   makes the multicluster setup real.
-2. **`oci-cluster-sealed.yaml` carries no `namespaces`/`clusterResources` key.**
-   Both the WKE app and `oci-observability` need the §3 reseal; until then the
-   registration is cluster-wide against a namespaced token and the cache never
-   syncs.
-3. **`clusters/oci/woodpecker-agent/deployment.yaml` still has a
-   `<HETZNER_TAILNET_IP>` placeholder** for its `WOODPECKER_SERVER`
-   (`100.64.0.25`, §0). Out of the first slice, so it is only a blocker once that
-   app is committed.
-4. **`clusters/oci/woodpecker-agent/sealed-agent-token.yaml` does not exist yet**
-   (`scripts/seal.sh -c oci-arm -n woodpecker -N woodpecker-agent-secret -f agent-secret=...`) - deliberately out of the first slice,
-   so `apps/oci/woodpecker-agent.yaml` should not be committed until then.
-5. **Nothing here is proven live.** The namespaced `oci` AppProject model, the two
-   NodePort policies, rke2's CoreDNS labels under the `observability`
-   NetworkPolicy and the pod-log path parsing are all exercised for the first time
-   by this rollout. §5's checks are the ones to watch, in that order.
-
-## After B8: drop the QEMU step (B8.3)
-
-Once the OCI arm64 agent (`clusters/oci/woodpecker-agent`) is registering
-successfully against the Hetzner gRPC NodePort, remove only the
-`tonistiigi/binfmt --install arm64` privileged init step, if one was added, from
-`base/woodpecker-server/deployment.yaml`. Keep the
-`WOODPECKER_PLUGINS_PRIVILEGED` allowance for
-Which leaves no namespace between the two clusters named `node-exporter`: the
-Hetzner DaemonSet lives in `observability` like the OCI agent.
+1. **`oci-cluster-sealed.yaml` has to be resealed** so the `namespaces` list
+   includes `wke`, before the first sync of `apps/oci/wke.yaml` (section 3).
+2. **Nothing for WKE is proven live yet.** The Traefik entry point and the
+   certificate, the namespaced `wke` AppProject syncing `wke`, and Alloy's scrape
+   of the `wke` pods are exercised for the first time by that rollout. After the first
+   sync check `kubectl --context hetzner-debian -n argocd get app wke`,
+   `kubectl --context oci-arm -n wke get certificate` and
+   `up{cluster="oci",namespace="wke"}` in Prometheus.
 
 ## 8. Live state (measured 2026-10-14, both clusters over the tailnet)
 
-§1's expectations were written from the plan, not the cluster. This is what the
-audit actually returned; re-run it after any change.
+The expectations in section 1 were written before the cluster was audited. This
+is what the audit actually returned; re-run it after any change.
 
 ### Tailnet
 
@@ -322,18 +310,19 @@ effect after a reload: `kubectl -n headscale rollout restart deploy/headscale`.
 ### Hetzner (`debian-k3s`, k3s v1.33.5, public 46.224.8.239, no private address)
 
 - 16 ArgoCD apps, 15 Synced + Healthy. **`sealed-secrets` is OutOfSync** on
-  `Deployment/sealed-secrets-controller` - pre-existing, unrelated to this slice,
+  `Deployment/sealed-secrets-controller` - pre-existing, unrelated to the OCI work,
   worth a look.
 - `oci-apps` is live and Synced but has **no children**: everything under
   `apps/oci` was uncommitted, so ArgoCD synced an empty directory.
 - `oci-cluster` registration: `server = https://100.64.0.2:6443`, keys
   `config`/`name`/`server` only - **no `namespaces`, no `clusterResources`**. §3 is
-  mandatory before any OCI app can sync.
+  mandatory before any OCI app can sync (commit e9c1747 added a list without
+  `wke`; section 7 has the open item).
 - Observability pods healthy (`alloy`, `grafana`, `loki`, `prometheus`), one
   `traefik` ingress class, both public ingest ingresses live for 28d.
 - No NodePort services at all, so 30090/30310 are free.
 - **No namespace carries a PSA label**, including `observability` - which is why
-  the `enforce: privileged` this change adds there documents an existing fact
+  the `enforce: privileged` the bootstrap adds there documents an existing fact
   rather than changing behaviour.
 - Namespaces not managed by this repo: `arc-systems` (an ARC runner controller,
   361d), `honeywatch`, `portfolio`, and an empty `traefik-v2`.
@@ -354,15 +343,14 @@ effect after a reload: `kubectl -n headscale rollout restart deploy/headscale`.
   to evict.
 - No `cert-manager`, **no ingress controller anywhere** (`get ingressclass` is
   empty), no NodePort/LoadBalancer services, no NetworkPolicies.
-- `rke2-metrics-server` is **NotReady** (151d): it cannot reach the kubelet,
-  `dial tcp 10.0.0.32:10250: no route to host`. Pre-existing, unrelated, and it
-  will block `kubectl top` and HPAs later.
+- `rke2-metrics-server` was NotReady when measured on 2026-10-14 and Ready
+  (1/1 Running) on 2026-11-13.
 
 ### What that changes here
 
-- §1: there is no ingress class to expect yet; ADR 0008's `traefik` is a WKE
-  prerequisite, not current state.
+- Section 1: there was no ingress class yet; the `traefik` class that the WKE
+  ingress uses comes from the precondition in section 2.
 - §6: the tailnet ACL plus the two `100.64.0.0/10` NetworkPolicy rules are the
   entire gate on the OCI path, and both ends were verified against live tags.
-- The missing `namespaces` key in `oci-cluster` is the one true blocker; every
-  other item in this slice is additive.
+- The `namespaces` list of `oci-cluster` is the one blocker for the WKE app: it
+  must include `wke` (section 7); everything else is additive.
