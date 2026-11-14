@@ -1,0 +1,27 @@
+# Registers WKE's own k8s/base manifests: the app repo owns them, fleet only
+# points at them. The namespace and its RBAC come from clusters/oci/bootstrap,
+# not from Argo.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wke
+  namespace: argocd
+spec:
+  project: wke
+  source:
+    repoURL: https://github.com/straightchlorine/wke.git
+    path: k8s/base
+    targetRevision: master
+  destination:
+    name: oci
+    namespace: wke
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
