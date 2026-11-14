@@ -91,10 +91,41 @@ sudo semanage fcontext -a -t container_file_t '/opt/local-path-provisioner(/.*)?
 sudo restorecon -Rv /opt/local-path-provisioner
 ```
 
-Before the issuers, WKE needs its entry point. This is done by hand on the
-node, not by ArgoCD. Enable RKE2's packaged Traefik with `ingress-controller:
-traefik` in `/etc/rancher/rke2/config.yaml`, then restart `rke2-server`. Check
-afterwards:
+Before the bootstrap apply, the node needs two settings. This is done by hand on
+the node, not by ArgoCD. `/etc/rancher/rke2/config.yaml`:
+
+```yaml
+write-kubeconfig-mode: "0640"
+tls-san:
+  - 100.64.0.2
+  - oci-arm
+disable:
+  - rke2-ingress-nginx
+ingress-controller: traefik
+resolv-conf: /etc/rancher/rke2/resolv.conf
+```
+
+`/etc/rancher/rke2/resolv.conf` holds two lines: `nameserver 169.254.169.254`
+(the OCI resolver) and `nameserver 1.1.1.1`.
+
+`ingress-controller: traefik` installs rke2-traefik (chart 39.0.701, Traefik
+v3.6.12) as a DaemonSet with hostPort 80 and 443 on a pod-network pod, IngressClass
+`traefik`; the `disable: rke2-ingress-nginx` entry is redundant and harmless.
+`bootstrap/traefik-config.yaml` is a HelmChartConfig that makes Traefik write the
+public hostname into every Ingress status; its Service is ClusterIP and has no
+address to copy, which would leave Argo CD showing the app as Progressing.
+`resolv-conf` is needed because Tailscale manages the node's `/etc/resolv.conf`
+(MagicDNS): pods cannot reach that resolver, so CoreDNS, which forwards to the
+kubelet's resolv.conf, answered SERVFAIL for every external name. The node's own
+DNS is untouched. Restart rke2, then CoreDNS (existing pods keep the resolver
+they were created with):
+
+```sh
+sudo systemctl restart rke2-server
+kubectl --context oci-arm -n kube-system rollout restart deploy/rke2-coredns-rke2-coredns
+```
+
+Check afterwards; a busybox pod must fetch `https://en.wikipedia.org`:
 
 ```sh
 kubectl --context oci-arm get ingressclass                # traefik is listed
@@ -105,7 +136,8 @@ kubectl --context oci-arm get crd middlewares.traefik.io  # exists
 The OCI security list must allow TCP 80 and 443: they become the node's only
 public listener, and the HTTP-01 challenge of the issuers below arrives on port
 80. The node has no host firewall: firewalld is disabled and the INPUT chain accepts by default
-(checked 2026-11-14). `wke.piotrkrzysztof.dev` is a DNS-only record at Cloudflare.
+(checked 2026-11-14). `wke.piotrkrzysztof.dev` is proxied through Cloudflare (not
+DNS-only), zone SSL mode Full; the HTTP-01 challenge passes through the proxy.
 
 Then, only once the webhook is up, the issuers (two applies, not one: the
 ClusterIssuers are CRs whose CRDs the previous step installs):
@@ -289,6 +321,14 @@ show the OCI host's journal plus `{namespace="wke"}` pod streams.
    sync check `kubectl --context hetzner-debian -n argocd get app wke`,
    `kubectl --context oci-arm -n wke get certificate` and
    `up{cluster="oci",namespace="wke"}` in Prometheus.
+3. **Argo CD showed `wke` as Synced and Progressing, not Healthy**: Traefik's
+   Service is ClusterIP, so the Ingress status stayed empty and Argo CD's
+   Ingress check waits for an address. `bootstrap/traefik-config.yaml` fixes it
+   by publishing the public hostname in the status. It holds until applied
+   (`kubectl --context oci-arm apply -f clusters/oci/bootstrap/traefik-config.yaml`,
+   which restarts the Traefik pod).
+4. **Traefik's rate limit counts per connecting address**, which behind the
+   Cloudflare proxy is a Cloudflare edge address.
 
 ## 8. Live state (measured 2026-10-14, both clusters over the tailnet)
 
@@ -354,3 +394,21 @@ effect after a reload: `kubectl -n headscale rollout restart deploy/headscale`.
   entire gate on the OCI path, and both ends were verified against live tags.
 - The `namespaces` list of `oci-cluster` is the one blocker for the WKE app: it
   must include `wke` (section 7); everything else is additive.
+
+### Changes on 2026-11-14
+
+These supersede the 10-14 bullets on ingress, cert-manager and `wke`.
+
+- Ingress: rke2-traefik runs (DaemonSet, hostPort 80 and 443, IngressClass `traefik`).
+- Resolver: the kubelet uses `/etc/rancher/rke2/resolv.conf` (section 2); pods resolve
+  through the OCI resolver. Pods still cannot reach tailnet addresses; the host can.
+- Host firewall: none (firewalld disabled, INPUT and FORWARD accept); the OCI security
+  list allows TCP 80 and 443 from 0.0.0.0/0.
+- Bootstrap applied: cert-manager v1.21.1, ClusterIssuers `letsencrypt` and
+  `letsencrypt-staging` Ready; `wke` enforces pod-security restricted; the Argo CD
+  registration allows `wke,observability,woodpecker`.
+- WKE: Argo CD app `wke` (project `wke`), release 0.1.2, five Deployments (api, ml,
+  redis, watcher, web) Running, CronJob `wke-trending` at 03:00 UTC; certificate
+  `wke-tls` issued.
+- CPU: 4 allocatable, requests 3055m (76 percent) with WKE; 1875m of that is the
+  control plane, canal and the Woodpecker agent. wke-ml's request is 1000m, limit 2000m.

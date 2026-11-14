@@ -319,8 +319,31 @@ data:
         ui:
           hide-url: true
 
-      # WKE probes (site + /api/v1/status) removed until the project exists; the
-      # old definitions are in git history and will need rewriting anyway.
+      # WKE, probed through the public host (the oci cluster is not reachable by service DNS).
+      - name: WKE
+        group: external
+        url: https://wke.piotrkrzysztof.dev/
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 5000"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: ntfy
+
+      # Status always answers 200; the body says whether Redis is reachable. No build is triggered.
+      - name: WKE API
+        group: external
+        url: https://wke.piotrkrzysztof.dev/api/v1/status
+        interval: 120s
+        client:
+          timeout: 10s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 5000"
+          - "[BODY].redis == true"
+        alerts:
+          - type: ntfy
 
       - name: QP
         group: docs
@@ -369,6 +392,17 @@ data:
       - name: Honeywatch Docs
         group: docs
         url: https://docs.honeywatch.piotrkrzysztof.dev/
+        interval: 120s
+        conditions:
+          - "[STATUS] == 200"
+          - "[RESPONSE_TIME] < 5000"
+          - "[CERTIFICATE_EXPIRATION] > 240h"
+        alerts:
+          - type: ntfy
+
+      - name: KSeF
+        group: docs
+        url: https://ksef.piotrkrzysztof.dev/
         interval: 120s
         conditions:
           - "[STATUS] == 200"

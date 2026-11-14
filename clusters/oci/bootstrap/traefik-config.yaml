@@ -1,0 +1,19 @@
+# Makes the packaged Traefik write the public hostname into the status of every
+# Ingress it serves.
+# The default copies the status of its own Service, which is ClusterIP on this
+# cluster and has none, and Argo CD keeps an app Progressing until its Ingresses
+# show an address.
+# Only the status field changes; traffic still enters through the hostPort on 80 and 443.
+apiVersion: helm.cattle.io/v1
+kind: HelmChartConfig
+metadata:
+  name: rke2-traefik
+  namespace: kube-system
+spec:
+  valuesContent: |-
+    providers:
+      kubernetesIngress:
+        publishedService:
+          enabled: false
+    additionalArguments:
+      - "--providers.kubernetesingress.ingressendpoint.hostname=wke.piotrkrzysztof.dev"
