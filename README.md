@@ -1,10 +1,12 @@
-# Fleet
-
-Personal GitOps repo for my Kubernetes clusters.
-
 <div align="center">
 
+<h1 align="center">fleet</h1>
+
 **Repository:** [Codeberg](https://codeberg.org/piotrkrzysztof/fleet) (primary) · [GitHub](https://github.com/straightchlorine/fleet) (mirror)
+
+Personal GitOps for Kubernetes clusters.
+
+**Sibling repository:** [cloud](https://codeberg.org/piotrkrzysztof/cloud)
 
 </div>
 
@@ -42,5 +44,16 @@ compose/         # Docker Compose setups
 
 ## Clusters
 
-- **Hetzner** — k3s single-node with Traefik ingress, cert-manager (Let's Encrypt), and Sealed Secrets. Runs the observability stack (Prometheus, Loki, Grafana, Alloy) and the ArgoCD that manages both clusters.
-- **OCI** — single-node rke2 (arm64), reachable only over the headscale tailnet. Registered in the Hetzner ArgoCD across that tunnel; hosts WKE, the native arm64 Woodpecker agent and the host telemetry agent (`clusters/oci/observability`). Tailnet prerequisites and the bootstrap order live in [clusters/oci/README.md](clusters/oci/README.md).
+- **Hetzner** - single-node with Traefik ingress, cert-manager (Let's Encrypt), and
+Sealed Secrets. From notable projects - it runs honeywatch dashboard and headscale.
+Along with that some observability and Woodpecker CI.
+- **OCI** - single-node rke2 (arm64). Registered in the Hetzner ArgoCD across headscale
+tunnel; hosts WKE, the native arm64 Woodpecker agent and the host telemetry agent.
+
+---
+
+<div align="center">
+
+To the only God, be honour and glory for ever and ever.
+
+</div>
